@@ -1,0 +1,8 @@
+{application, leveldb,
+ [{description, "LevelDB api"},
+  {vsn, "0.1"},
+  {modules, [leveldb, leveldb_test]},
+  {registered, []},
+  {applications, [kernel, stdlib, sasl]},
+  {mod, {leveldb,[]}}
+ ]}.
