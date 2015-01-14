@@ -11,12 +11,14 @@
 	 readoptions/1,
 	 writeoptions/1]).
 
+-export([resource_test/0]).
+	 
 -on_load(init/0).
 
 -include("leveldb.hrl").
 
 init() ->
-    ok = erlang:load_nif("./leveldb_nif", 0).
+    ok = erlang:load_nif("/home/erdem/erl_leveldb/c_src/leveldb_nif", 0).
 
 %% leveldb operations
 open_db(_options, _Path)->
@@ -45,4 +47,8 @@ readoptions(_leveldb_readoptions_record) ->
     erlang:nif_error(nif_library_not_loaded).
 
 writeoptions(_leveldb_writeoptions_record) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%NIF test to allocate resources
+resource_test()->
     erlang:nif_error(nif_library_not_loaded).

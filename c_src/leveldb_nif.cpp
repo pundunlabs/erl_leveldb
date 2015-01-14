@@ -6,29 +6,52 @@
 using namespace std;
 
 static ErlNifResourceFlags resource_flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
-
+    
 static ErlNifResourceType* myOptionsResource;
 static ErlNifResourceType* myDBResource;
 
+ 
+static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
+    myDBResource = enif_open_resource_type(env,
+					   "leveldb_nif", 
+					   "mydb_resource",
+					   NULL,
+					   resource_flags,
+					   NULL);
 
-static void dbresource_dtor(ErlNifEnv* env, void* obj) {
-    leveldb::DB** db = (leveldb::DB**) obj;
-    delete db;
+    myOptionsResource = enif_open_resource_type(env,
+						"leveldb_nif", 
+						"options_resource",
+						NULL,
+						resource_flags,
+						0);
+    
+    return 0;
 }
 
-static void optionsresource_dtor(ErlNifEnv* env, void* obj) {
-    leveldb::Options* options = (leveldb::Options*) obj;
-    delete options;
+static int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data,ERL_NIF_TERM load_info){
+    return 0;
 }
 
-static void readoptionsresource_dtor(ErlNifEnv* env, void* obj) {
-    leveldb::ReadOptions* readoptions = (leveldb::ReadOptions*) obj;
-    delete readoptions;
-}
-
-static void writeoptionsresource_dtor(ErlNifEnv* env, void* obj) {
-    leveldb::WriteOptions* writeoptions = (leveldb::WriteOptions*) obj;
-    delete writeoptions;
+/*Test NIFs for experimenting*/
+static ERL_NIF_TERM resource_test_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    ERL_NIF_TERM term;
+    /* ERL_NIF_TERM status_term; */
+    /*return  enif_make_atom(env, "ok");*/
+    if(!myDBResource){
+	 return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "resource_type"));
+    }
+    
+    void* db_ptr = enif_alloc_resource(myDBResource, 1024);
+    
+    // //leveldb::DB* db;
+    // leveldb::Options options; 
+    // options.create_if_missing = true;
+    // leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+    term = enif_make_resource(env, db_ptr);
+	    
+    enif_release_resource(db_ptr);
+    return term;
 }
 
 /*leveldb operations*/
@@ -50,15 +73,8 @@ static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 	ERL_NIF_TERM db_term;
 	/* ERL_NIF_TERM status_term; */
 	
-	myDBResource = enif_open_resource_type(env,
-					       "leveldb_nif", 
-					       "mydb_resource",
-					       dbresource_dtor,
-					       resource_flags,
-					       0);
 	leveldb::DB** db_ptr = (leveldb::DB**)  enif_alloc_resource(myDBResource, sizeof( leveldb::DB*));
-    
-
+	
 	leveldb::Status status;
 
 	*db_ptr = open_db(options, path, &status);
@@ -326,13 +342,6 @@ static ERL_NIF_TERM options_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
         return enif_make_badarg(env);
     }
     else{
-	myOptionsResource = enif_open_resource_type(env,
-						    "leveldb_nif", 
-						    "options_resource",
-						    &optionsresource_dtor,
-						    resource_flags,
-						    0);
-	
 	leveldb::Options* options = ( leveldb::Options* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::Options));
 	
 	result = init_options(env, options_array, options);
@@ -359,13 +368,6 @@ static ERL_NIF_TERM readoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
     else{
-	myOptionsResource = enif_open_resource_type(env,
-						    "leveldb_nif", 
-						    "options_resource",
-						    &readoptionsresource_dtor,
-						    resource_flags,
-						    0);
-	
 	leveldb::ReadOptions* readoptions = ( leveldb::ReadOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::ReadOptions));
 	
 	result = init_readoptions(env, readoptions_array, readoptions);
@@ -392,13 +394,6 @@ static ERL_NIF_TERM writeoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TER
         return enif_make_badarg(env);
     }
     else{
-	myOptionsResource = enif_open_resource_type(env,
-						    "leveldb_nif", 
-						    "options_resource",
-						    &writeoptionsresource_dtor,
-						    resource_flags,
-						    0);
-	
 	leveldb::WriteOptions* writeoptions = ( leveldb::WriteOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::WriteOptions));
 	
 	result = init_writeoptions(env, writeoptions_array, writeoptions);
@@ -426,8 +421,10 @@ static ErlNifFunc nif_funcs[] = {
 
     {"options", 1, options_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"readoptions", 1, readoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"writeoptions", 1, writeoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND}
+    {"writeoptions", 1, writeoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+
+    {"resource_test", 0, resource_test_nif}
 
 };
 
-ERL_NIF_INIT(leveldb, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(leveldb, nif_funcs, &load, NULL, &upgrade, NULL)

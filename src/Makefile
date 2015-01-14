@@ -1,10 +1,35 @@
+include ../vsn.mk
+VSN=$(LEVELDB_VSN)
+
+EBIN = ../ebin
+
+APP_NAME = leveldb
+APP_FILE= $(APP_NAME).app
+APP_SRC= $(APP_FILE).src
+APP_TARGET= $(EBIN)/$(APP_FILE)
+
+MODULES = \
+	leveldb \
+	leveldb_test
+
+ERL_FILES = $(MODULES:%=%.erl)
+
+INCLUDE_DIRS = \
+	../include
+
 .PHONY: all clean
 
-all: ../ebin	
-	erlc -I ../include -o ../ebin ./*.erl
+all: $(EBIN) $(APP_TARGET)
+	erlc -I $(INCLUDE_DIRS) -o $(EBIN) $(ERL_FILES)
 
-../ebin:
+$(EBIN):
 	mkdir ../ebin
 
+$(APP_TARGET): $(APP_SRC) 
+	@set -e; mods=`echo $(MODULES) | sed -e 's; ;,;g'` ; \
+	sed -e "s;%MODULES%;$$mods;" $< | \
+	sed -e 's;%VSN%;$(VSN);' > $@
+
 clean:
+	rm ../ebin/*.app
 	rm ../ebin/*.beam

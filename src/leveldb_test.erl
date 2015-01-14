@@ -10,6 +10,7 @@
 	 open_close/0,
 	 put_get_delete/1,
 	 put_n/1,
+	 get_x/1,
 	 write_n/1]).
 
 -export([open_db/1,
@@ -21,6 +22,8 @@
 -export([options/0,
 	 readoptions/0,
 	 writeoptions/0]).
+
+-export([resource_test_n/1]).
 
 %%%===================================================================
 %%% API
@@ -81,10 +84,27 @@ put_n(N)->
 	fun(X)->
 		ok = leveldb:put(DB, WriteOptions,
 				 erlang:term_to_binary(X),
-				 erlang:term_to_binary("some example data"))
+				 erlang:term_to_binary("some example data " ++ integer_to_list(X))
+				)
 	end,
     lists:map(Put, lists:seq(1,N)),
+    erlang:garbage_collect(self()),
+    erlang:garbage_collect(),
     ok = close_db(DB).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @spec
+%% @end
+%%--------------------------------------------------------------------
+get_x(X)->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    {ok, ReadOptions} = readoptions(),
+    Result= leveldb:get(DB, ReadOptions,
+			erlang:term_to_binary(X)),
+    ok = close_db(DB),
+    Result.
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -180,6 +200,19 @@ readoptions()->
 writeoptions()->
     leveldb:writeoptions(#leveldb_writeoptions{}).
 
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @spec
+%% @end
+%%--------------------------------------------------------------------
+resource_test_n(N)->
+    Put =
+	fun(_)->
+		leveldb:resource_test()
+	end,
+    lists:map(Put, lists:seq(1,N)),
+    ok.
 
 %%%===================================================================
 %%% Internal functions
