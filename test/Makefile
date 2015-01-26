@@ -3,13 +3,10 @@ VSN=$(LEVELDB_VSN)
 
 EBIN = ../ebin
 
-APP_NAME = leveldb
-APP_FILE= $(APP_NAME).app
-APP_SRC= $(APP_FILE).src
-APP_TARGET= $(EBIN)/$(APP_FILE)
 
 MODULES = \
-	leveldb
+	phofs \
+	leveldb_test
 
 ERL_FILES = $(MODULES:%=%.erl)
 
@@ -18,7 +15,7 @@ INCLUDE_DIRS = \
 
 .PHONY: all clean
 
-all: $(EBIN) $(APP_TARGET)
+all: $(EBIN)
 	erlc -I $(INCLUDE_DIRS) -o $(EBIN) $(ERL_FILES)
 
 $(EBIN):

@@ -6,6 +6,8 @@
 -include("leveldb.hrl").
 
 %% API
+-export([concurrency_basic/2]).
+
 -export([basic/0,
 	 open_close/0,
 	 put_get_delete/1,
@@ -28,6 +30,32 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+%%--------------------------------------------------------------------
+%% @doc
+%% @spec
+%% @end
+%%--------------------------------------------------------------------
+concurrency_basic(N, Count)-> 
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    {ok, WriteOptions} = writeoptions(),
+    F1 = fun(Pid, L) ->
+		 Put =
+		     fun(X)->
+			     Data = "some example data " ++ integer_to_list(L)
+				 ++ integer_to_list(X),
+			     ok = leveldb:put(DB, WriteOptions,
+					      erlang:term_to_binary(X),
+					      erlang:term_to_binary(Data))
+		     end,
+		 lists:map(Put, lists:seq(1,Count)),
+		 Pid ! {self(), Count}
+	 end,
+    F2 = fun(Key, Vals, Acc) -> [{Key, Vals} | Acc] end, 
+    List = lists:seq(1, N),
+    L1 = phofs:mapreduce(F1, F2, [], List),
+    ok = close_db(DB),
+    {ok, L1}.
 
 %%--------------------------------------------------------------------
 %% @doc

@@ -1,4 +1,4 @@
-SUBDIRS = c_src src #test
+SUBDIRS = c_src src test
 
 .PHONY: subdirs $(SUBDIRS)
 
