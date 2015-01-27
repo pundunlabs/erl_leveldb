@@ -19,4 +19,5 @@ else
 fi
 
 cd ../..
+make all
 
