@@ -3,7 +3,8 @@ mkdir -p deps
 cd deps
 if [ ! -d "leveldb" ]; then
   	# Control will enter here if leveldb doesn't exist.
-  	git clone https://github.com/google/leveldb.git
+  	#git clone https://github.com/google/leveldb.git
+	git clone http://skelter/gits/erl_leveldb.git
 fi
 cd leveldb
 
