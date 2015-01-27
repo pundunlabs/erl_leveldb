@@ -1,0 +1,12 @@
+@author Erdem Aksu <erdem.aksu@mobilearts.com>
+@copyright 2015 Mobile Arts AB
+@version 1.0.0
+@title Welcome to erl_leveldb application
+@doc The application `erl_leveldb' is an erlang wrapper for leveldb.
+This wrapper application is implemented using Erlang NIFs and also uses Dirty Schedulars, thus requires an Erlang OTP installation with release >= 17.0?
+
+The build script will retrieve a fork of leveldb which is required to build this application.
+
+Application erl_leveldb includes module 'leveldb' which provides APIs like put/get/delete functions and basic test utilities for this API.
+
+Have fun! 
