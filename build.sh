@@ -4,7 +4,7 @@ cd deps
 if [ ! -d "leveldb" ]; then
   	# Control will enter here if leveldb doesn't exist.
   	#git clone https://github.com/google/leveldb.git
-	git clone http://skelter/gits/erl_leveldb.git
+	git clone http://skelter/gits/leveldb.git
 fi
 cd leveldb
 
