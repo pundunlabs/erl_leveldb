@@ -3,16 +3,16 @@
 -revision('$Revision: $ ').
 -modified('$Date: $ ').
 
+-include_lib("eunit/include/eunit.hrl").
 -include("leveldb.hrl").
 
 %% API
 -export([concurrency_basic/2]).
 
--export([basic/0,
-	 open_close/0,
+-export([open_close/0,
 	 put_get_delete/1,
 	 put_n/1,
-	 get_x/1,
+	 get_key/1,
 	 write_n/1]).
 
 -export([open_db/1,
@@ -30,6 +30,107 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @doc Test creating a leveldb options resource.
+%% @end
+%%--------------------------------------------------------------------
+-spec options_test() -> any().
+options_test()->
+    ?assertMatch({ok, _Options}, 
+		 leveldb:options(#leveldb_options{create_if_missing=true})).
+
+%%--------------------------------------------------------------------
+%% @doc Test creating a leveldb read options resource.
+%% @end
+%%--------------------------------------------------------------------
+-spec readoptions_test() -> any().
+readoptions_test()->
+    ?assertMatch({ok, _ReadOptions}, 
+		 leveldb:readoptions(#leveldb_readoptions{})).
+
+%%--------------------------------------------------------------------
+%% @doc Test creating a leveldb write options resource.
+%% @end
+%%--------------------------------------------------------------------
+-spec writeoptions_test() -> any().
+writeoptions_test()->
+    ?assertMatch({ok, _WriteOptions}, 
+		 leveldb:writeoptions(#leveldb_writeoptions{})).
+
+%%--------------------------------------------------------------------
+%% @doc Test openining and closing a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec open_close_db_test() -> any().
+open_close_db_test()->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    ?assertEqual(ok, close_db(DB)).
+
+%%--------------------------------------------------------------------
+%% @doc Test puting a key value entry into a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec put_test() -> any().
+put_test()->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    Key = term_to_binary("key"),
+    Data = term_to_binary("data"),
+    ?assertEqual(ok, leveldb:put(DB, WriteOptions, Key, Data)),
+    ?assertEqual(ok, close_db(DB)).
+
+%%--------------------------------------------------------------------
+%% @doc Test geting an entry by key from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_test() -> any().
+get_test()->
+    ?_test(
+       begin
+	   {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+	   {ok, ReadOptions} = leveldb:readoptions(#leveldb_readoptions{}),
+	   {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+	   Key = term_to_binary("key"),
+	   Data = term_to_binary("data"),
+	   ?assertEqual(Data, leveldb:get(DB, ReadOptions, Key)),
+	   ?assertEqual(ok, close_db(DB))
+       end).
+
+%%--------------------------------------------------------------------
+%% @doc Test deleting an entry by key from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_test() -> any().
+delete_test()->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    Key = term_to_binary("key"),
+    ?assertEqual(ok, leveldb:delete(DB, WriteOptions, Key)),
+    ?assertEqual(ok, close_db(DB)).
+
+%%--------------------------------------------------------------------
+%% @doc Test putting, getting and deleting an entry to a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec put_get_delete_test() -> any().
+put_get_delete_test() ->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    {ok, ReadOptions} = leveldb:readoptions(#leveldb_readoptions{}),
+    {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    Key = term_to_binary("key"),
+    Data = term_to_binary("data"),
+    ?assertEqual(ok, leveldb:put(DB, WriteOptions, Key, Data)),
+    Data = term_to_binary("data"),
+    ?assertEqual({ok, Data}, leveldb:get(DB, ReadOptions, Key)),
+    ?assertEqual(ok, leveldb:delete(DB, WriteOptions, Key)),
+    ?assertEqual(ok, close_db(DB)).
+
+
 %%--------------------------------------------------------------------
 %% @doc Test Count number of concurrent writes per process by N number of processes on leveldb.
 %% @end
@@ -58,31 +159,21 @@ concurrency_basic(N, Count)->
     {ok, L1}.
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc A simple test funtion that opens a leveldb database under "/tmp/basicdb"
 %% @end
 %%--------------------------------------------------------------------
-basic()->
-    {ok, Options} = options(),
-    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
-    ok = put(DB, erlang:term_to_binary("1"), erlang:term_to_binary("some example data")),
-    {ok, Value} = get(DB, erlang:term_to_binary("1")),
-    io:format("Value: ~p~n",[erlang:binary_to_term(Value)]),
-    ok = delete(DB, erlang:term_to_binary("1")),
-    ok = close_db(DB).
-
-%%--------------------------------------------------------------------
-%% @doc
-%% @end
-%%--------------------------------------------------------------------
+-spec open_close() -> ok.
 open_close()->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
     ok = close_db(DB).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
+%% performs N number of put, get and delete operations on it.
 %% @end
 %%--------------------------------------------------------------------
+-spec put_get_delete(N :: pos_integer()) -> ok.
 put_get_delete(N)->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
@@ -97,9 +188,11 @@ put_get_delete(N)->
     ok = close_db(DB).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
+%% performs N number of put operations on it. 
 %% @end
 %%--------------------------------------------------------------------
+-spec put_n(N :: pos_integer()) -> ok.
 put_n(N)->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
@@ -117,22 +210,26 @@ put_n(N)->
     ok = close_db(DB).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
+%% performs get operation on it using provided Key. 
 %% @end
 %%--------------------------------------------------------------------
-get_x(X)->
+-spec get_key(Key :: term()) -> term().
+get_key(Key)->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
     {ok, ReadOptions} = readoptions(),
-    Result= leveldb:get(DB, ReadOptions,
-			erlang:term_to_binary(X)),
+    Result = leveldb:get(DB, ReadOptions,
+			erlang:term_to_binary(Key)),
     ok = close_db(DB),
     Result.
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
+%% performs N number of batch writes on it. 
 %% @end
 %%--------------------------------------------------------------------
+-spec write_n(N :: pos_integer()) -> ok.
 write_n(N)->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
@@ -151,9 +248,11 @@ write_n(N)->
     ok = close_db(DB).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc  Test function that opens a leveldb database under "/tmp/basicdb" and
+%% returns the DB reference that corresponds to a NIF resource object. 
 %% @end
 %%--------------------------------------------------------------------
+-spec open_db(Path :: string()) -> {ok, DB :: binary()} | {error, Reason :: any()}.
 open_db(Path)->
     {ok, Options} = options(),
     case leveldb:open_db(Options, Path) of
@@ -163,60 +262,74 @@ open_db(Path)->
 	    {ok, DB}
     end.
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Test function that closes a leveldb database referenced by the resource
+%% that is returned by open_db/1
 %% @end
 %%--------------------------------------------------------------------
+-spec close_db(DB :: binary())-> ok.
 close_db(DB)->
     ok = leveldb:close_db(DB).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Basic test that performs get operation on a leveldb database 
+%% referenced by a DB resource object using provided Key.
 %% @end
 %%--------------------------------------------------------------------
+-spec get(DB :: binary(), Key :: term()) -> {ok, Value :: term()} | {error, Reason :: any()}. 
 get(DB, Key)->
     {ok, ReadOptions} = readoptions(),
     {ok, _Value} = leveldb:get(DB, ReadOptions, Key).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Basic test that performs put operation on a leveldb database 
+%% referenced by a DB resource object using provided Key and Value. 
 %% @end
 %%--------------------------------------------------------------------
+-spec put(DB :: binary(), Key :: term(), Value :: term()) -> ok | {error, Reason :: any()}. 
 put(DB, Key, Value)->
     {ok, WriteOptions} = writeoptions(),
     ok = leveldb:put(DB, WriteOptions, Key, Value).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Basic test that performs delete operation on a leveldb database 
+%% referenced by a DB resource object using provided Key. 
 %% @end
 %%--------------------------------------------------------------------
+-spec delete(DB :: binary(), Key :: term()) -> ok | {error, Reason :: any()}.
 delete(DB, Key)->
     {ok, WriteOptions} = writeoptions(),
     ok = leveldb:delete(DB, WriteOptions, Key).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Simple test function that gets and returns a leveldb options resource
+%% object with default values except create_if_missing=true.
 %% @end
 %%--------------------------------------------------------------------
+-spec options() -> {ok, binary()} | {error, Reason :: any()}.
 options()->
     leveldb:options(#leveldb_options{create_if_missing=true}).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Simple test function that gets and returns a leveldb readoptions 
+%% resource object with default values.
 %% @end
 %%--------------------------------------------------------------------
+-spec readoptions() -> {ok, binary()} | {error, Reason :: any()}.
 readoptions()->
     leveldb:readoptions(#leveldb_readoptions{}).
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc Simple test function that gets and returns a leveldb writeoptions 
+%% resource object with default values.
 %% @end
 %%--------------------------------------------------------------------
+-spec writeoptions() -> {ok, binary()} | {error, Reason :: any()}.
 writeoptions()->
     leveldb:writeoptions(#leveldb_writeoptions{}).
 
 
 %%--------------------------------------------------------------------
-%% @doc
+%% @doc This function is obsolete and has no consistent behavior.
 %% @end
 %%--------------------------------------------------------------------
 resource_test_n(N)->

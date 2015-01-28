@@ -4,9 +4,9 @@ APP_NAME = leveldb
 
 SUBDIRS = c_src src test
 
-.PHONY: all subdirs $(SUBDIRS) edoc clean
+.PHONY: all subdirs $(SUBDIRS) edoc eunit clean
 
-all: edoc subdirs
+all: edoc subdirs eunit
 
 subdirs: $(SUBDIRS)
 
@@ -16,6 +16,11 @@ $(SUBDIRS):
 edoc:
 	erl -noshell -run edoc_run application "'$(APP_NAME)'" \
                '"."' '[{def,{vsn,"$(VSN)"}}, {source_path, ["src", "test"]}]'
+
+eunit:
+	erl -noshell -pa ebin \
+	-eval 'eunit:test("ebin",[verbose])' \
+	-s init stop
 
 clean:
 	rm -f ./ebin/*
