@@ -18,8 +18,8 @@ edoc:
                '"."' '[{def,{vsn,"$(VSN)"}}, {source_path, ["src", "test"]}]'
 
 clean:
-	rm ./ebin/*
-	rm ./c_src/leveldb_nif.so*
+	rm -f ./ebin/*
+	rm -f ./c_src/leveldb_nif.so*
 
 realclean: clean
 	 rm -rf ./deps/*
