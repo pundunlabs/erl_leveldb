@@ -6,7 +6,10 @@ SUBDIRS = c_src src test
 
 .PHONY: all subdirs $(SUBDIRS) edoc eunit clean
 
-all: edoc subdirs eunit
+all: script edoc subdirs eunit
+
+script:
+	./build.sh
 
 subdirs: $(SUBDIRS)
 
