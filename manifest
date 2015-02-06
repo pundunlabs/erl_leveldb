@@ -1,6 +1,0 @@
-deps:
-http://skelter/gits/leveldb.git v1.18
-
-build:
-make all
-
