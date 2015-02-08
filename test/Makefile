@@ -3,6 +3,7 @@ VSN=$(LEVELDB_VSN)
 
 EBIN = ../ebin
 
+RM ?= rm -f
 
 MODULES = \
 	phofs \
@@ -27,5 +28,4 @@ $(APP_TARGET): $(APP_SRC)
 	sed -e 's;%VSN%;$(VSN);' > $@
 
 clean:
-	rm ../ebin/*.app
-	rm ../ebin/*.beam
+	$(RM) ../ebin/*.beam

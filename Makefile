@@ -1,12 +1,12 @@
 include ./vsn.mk
 VSN=$(LEVELDB_VSN)
 APP_NAME = leveldb
-
+MAKE ?= make
 SUBDIRS = c_src src test
 
 .PHONY: all subdirs $(SUBDIRS) edoc eunit clean
 
-all: script edoc subdirs eunit
+all: script subdirs
 
 script:
 	./build.sh
@@ -21,13 +21,15 @@ edoc:
                '"."' '[{def,{vsn,"$(VSN)"}}, {source_path, ["src", "test"]}]'
 
 eunit:
+	export LD_LIBRARY_PATH=/home/erdem/growbeard/src/erl_leveldb/deps/leveldb &&\
 	erl -noshell -pa ebin \
 	-eval 'eunit:test("ebin",[verbose])' \
 	-s init stop
 
 clean:
-	rm -f ./ebin/*
-	rm -f ./c_src/leveldb_nif.so*
+	@for i in $(SUBDIRS); do \
+    echo "Cleaning in $$i..."; \
+    (cd $$i; $(MAKE) clean); done
 
 realclean: clean
 	 rm -rf ./deps/*

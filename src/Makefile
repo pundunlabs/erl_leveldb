@@ -3,6 +3,8 @@ VSN=$(LEVELDB_VSN)
 
 EBIN = ../ebin
 
+RM ?= rm -f
+
 APP_NAME = leveldb
 APP_FILE= $(APP_NAME).app
 APP_SRC= $(APP_FILE).src
@@ -30,5 +32,5 @@ $(APP_TARGET): $(APP_SRC)
 	sed -e 's;%VSN%;$(VSN);' > $@
 
 clean:
-	rm ../ebin/*.app
-	rm ../ebin/*.beam
+	$(RM) ../ebin/*.app
+	$(RM) ../ebin/*.beam

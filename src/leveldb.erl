@@ -32,7 +32,20 @@
 
 
 init() ->
-    ok = erlang:load_nif("/home/erdem/erl_leveldb/c_src/leveldb_nif", 0).
+    Dir = "../priv",
+    PrivDir = 
+        case code:priv_dir(leveldb) of
+            {error, _} ->
+                case code:which(?MODULE) of
+                    Filename when is_list(Filename) ->
+                        filename:join([filename:dirname(Filename), Dir]);
+                    _ ->
+                        Dir
+                end;
+            Path -> Path
+        end,
+    Lib = filename:join(PrivDir, "leveldb_nif"),
+    erlang:load_nif(Lib, 0).
 
 %% leveldb operations
 
