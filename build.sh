@@ -15,6 +15,7 @@ then
 	echo "libleveldb.a found."
 else
 	echo "libleveldb.a not found."
+	export INSTALL_PATH="."
 	(cd ${leveldb_dir} && make)
 fi
 
