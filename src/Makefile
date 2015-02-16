@@ -11,7 +11,8 @@ APP_SRC= $(APP_FILE).src
 APP_TARGET= $(EBIN)/$(APP_FILE)
 
 MODULES = \
-	leveldb
+	leveldb \
+    leveldb_lib
 
 ERL_FILES = $(MODULES:%=%.erl)
 
