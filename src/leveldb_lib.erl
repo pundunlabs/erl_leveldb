@@ -9,7 +9,9 @@
 -module(leveldb_lib).
 
 %%API
--export([build_leveldb_options/1]).
+-export([build_leveldb_options/1,
+         build_leveldb_readoptions/1,
+         build_leveldb_writeoptions/1]).
 
 -include("leveldb.hrl").
 
@@ -21,7 +23,7 @@
 %%--------------------------------------------------------------------
 %% @doc
 %% Build a #leveldb_options{} record with the provided proplist OptionsPL
-%%
+%% @end
 %%--------------------------------------------------------------------
 -spec build_leveldb_options(OptionsPL::[{atom(), term()}]) -> ok | {error, Reason::term()}.
 build_leveldb_options(OptionsPL) ->
@@ -56,4 +58,50 @@ build_leveldb_options([E|Rest], LeveldbOptions) ->
     error_logger:info_msg("Unsupported leveldb options parameter: ~p", [E]),
     build_leveldb_options(Rest, LeveldbOptions).
 
- 
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Build a #leveldb_readptions{} record with the provided proplist OptionsPL
+%% @end
+%%--------------------------------------------------------------------
+-spec build_leveldb_readoptions(OptionsPL::[{atom(), term()}]) -> ok | {error, Reason::term()}.
+build_leveldb_readoptions(OptionsPL) ->
+    build_leveldb_readoptions(OptionsPL, #leveldb_readoptions{}).
+
+-spec build_leveldb_readoptions(OptionsPL::[{atom(), term()}],
+                            LeveldbiReadOptions::#leveldb_readoptions{}) -> ok | {error, Reason::term()}.
+build_leveldb_readoptions([], LeveldbReadOptions) ->
+    LeveldbReadOptions;
+build_leveldb_readoptions([{verify_checksums, Bool}|Rest],
+                          LeveldbReadOptions) when Bool == true;
+                                                   Bool == false ->
+    build_leveldb_readoptions(Rest,
+                              LeveldbReadOptions#leveldb_readoptions{verify_checksums = Bool});
+build_leveldb_readoptions([{fill_cache, Bool}|Rest],
+                          LeveldbReadOptions) when Bool == true;
+                                                   Bool == false ->
+    build_leveldb_readoptions(Rest,
+                              LeveldbReadOptions#leveldb_readoptions{fill_cache = Bool});
+build_leveldb_readoptions([_|Rest], LeveldbReadOptions) -> 
+    build_leveldb_readoptions(Rest, LeveldbReadOptions).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Build a #leveldb_writeptions{} record with the provided proplist OptionsPL
+%% @end
+%%--------------------------------------------------------------------
+-spec build_leveldb_writeoptions(OptionsPL::[{atom(), term()}]) -> ok | {error, Reason::term()}.
+build_leveldb_writeoptions(OptionsPL) ->
+    build_leveldb_writeoptions(OptionsPL, #leveldb_writeoptions{}).
+
+-spec build_leveldb_writeoptions(OptionsPL::[{atom(), term()}],
+                                 LeveldbiReadOptions::#leveldb_writeoptions{}) -> ok | {error, Reason::term()}.
+build_leveldb_writeoptions([], LeveldbWriteOptions) ->
+    LeveldbWriteOptions;
+build_leveldb_writeoptions([{sync, Bool}|Rest],
+                           LeveldbWriteOptions) when Bool == true;
+                                                     Bool == false ->
+    build_leveldb_writeoptions(Rest,
+                               LeveldbWriteOptions#leveldb_writeoptions{sync = Bool});
+build_leveldb_writeoptions([_|Rest], LeveldbWriteOptions) -> 
+    build_leveldb_writeoptions(Rest, LeveldbWriteOptions).
