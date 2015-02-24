@@ -10,20 +10,23 @@
 -export([concurrency_basic/2]).
 
 -export([open_close/0,
-	 put_get_delete/1,
-	 put_n/1,
-	 get_key/1,
-	 write_n/1]).
+         put_get_delete/1,
+         put_n/1,
+         get_key/1,
+         write_n/1]).
 
 -export([open_db/1,
-	 close_db/1,
-	 get/2,
-	 put/3,
-	 delete/2]).
+         close_db/1,
+         get/2,
+         put/3,
+         delete/2]).
 
 -export([options/0,
-	 readoptions/0,
-	 writeoptions/0]).
+         readoptions/0,
+         writeoptions/0]).
+
+-export([destroy_db/1,
+         repair_db/1]).
 
 -export([resource_test_n/1]).
 
@@ -130,6 +133,24 @@ put_get_delete_test() ->
     ?assertEqual(ok, leveldb:delete(DB, WriteOptions, Key)),
     ?assertEqual(ok, close_db(DB)).
 
+
+%%--------------------------------------------------------------------
+%% @doc Test repairing a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec repair_db_test() -> any().
+repair_db_test()->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    ?assertEqual(ok, leveldb:repair_db("/tmp/erl_leveldb_test", Options)).
+
+%%--------------------------------------------------------------------
+%% @doc Test destroying a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec destroy_db_test() -> any().
+destroy_db_test()->
+    {ok, Options} = leveldb:options(#leveldb_options{create_if_missing=true}),
+    ?assertEqual(ok, leveldb:destroy_db("/tmp/erl_leveldb_test", Options)).
 
 %%--------------------------------------------------------------------
 %% @doc Test Count number of concurrent writes per process by N number of processes on leveldb.
@@ -327,6 +348,36 @@ readoptions()->
 writeoptions()->
     leveldb:writeoptions(#leveldb_writeoptions{}).
 
+
+%%--------------------------------------------------------------------
+%% @doc  Test function that detroys the contents of leveldb database 
+%% that is specified by Path and returns ok. 
+%% @end
+%%--------------------------------------------------------------------
+-spec destroy_db(Path :: string()) -> ok | {error, Reason :: any()}.
+destroy_db(Path)->
+    {ok, Options} = options(),
+    case leveldb:destroy_db(Path, Options) of
+	    {error, Reason} ->
+	        {error, Reason};
+	    ok ->
+	        ok
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc  Test function that tries to repair a leveldb database that
+%% is specified by Path and returns ok. 
+%% @end
+%%--------------------------------------------------------------------
+-spec repair_db(Path :: string()) -> ok | {error, Reason :: any()}.
+repair_db(Path)->
+    {ok, Options} = options(),
+    case leveldb:repair_db(Path, Options) of
+	    {error, Reason} ->
+	        {error, Reason};
+	    ok ->
+	        ok
+    end.
 
 %%--------------------------------------------------------------------
 %% @doc This function is obsolete and has no consistent behavior.

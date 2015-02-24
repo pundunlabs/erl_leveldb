@@ -39,7 +39,7 @@ static ERL_NIF_TERM resource_test_nif(ErlNifEnv* env, int argc, const ERL_NIF_TE
     /* ERL_NIF_TERM status_term; */
     /*return  enif_make_atom(env, "ok");*/
     if(!myDBResource){
-	 return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "resource_type"));
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "resource_type"));
     }
     
     void* db_ptr = enif_alloc_resource(myDBResource, 1024);
@@ -61,13 +61,13 @@ static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     
     /*get options resource*/
     if (argc != 2 || !enif_get_resource(env, argv[0], myOptionsResource, (void **) &options)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
-	//Return enif_make_badarg(env);
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+	    //Return enif_make_badarg(env);
     }
     /*get path*/
     else if(enif_get_string(env, argv[1], path, sizeof(path), ERL_NIF_LATIN1) <1){
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
-	//return enif_make_badarg(env);
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	    //return enif_make_badarg(env);
     }
     else{
 	ERL_NIF_TERM db_term;
@@ -253,22 +253,22 @@ static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
     /*get db_ptr resource*/
     if (argc != 4 || !enif_get_resource(env, argv[0], myDBResource, (void **) &db_ptr)) {
-	return enif_make_badarg(env);
+	    return enif_make_badarg(env);
     }
     /*get writeoptions resource*/
     else if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &writeoptions)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "writeoptions"));
-	//Return enif_make_badarg(env);
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "writeoptions"));
+	    //Return enif_make_badarg(env);
     }
     /*get delete keys resource*/
     else if (!enif_get_list_length(env, delete_list, &delete_keys_size)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "delete_ks"));
-	//Return enif_make_badarg(env);
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "delete_ks"));
+	    //Return enif_make_badarg(env);
     }
     /*get put key/values resource*/
     else if (!enif_get_list_length(env, put_list, &put_kvs_size)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "put_kvs"));
-	//Return enif_make_badarg(env);
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "put_kvs"));
+	    //Return enif_make_badarg(env);
     }
     else{
 	
@@ -279,7 +279,7 @@ static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 	unsigned int i = 0;
 	while(enif_get_list_cell(env, delete_list, &head, &tail)) {
 	    if(!enif_inspect_binary(env, head, &bin)) {
-		return enif_make_badarg(env);    
+		    return enif_make_badarg(env);    
 	    }
 	    leveldb::Slice key((const char*)bin.data, (size_t) bin.size);
 	    delete_keys[i] = key;
@@ -292,15 +292,15 @@ static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 	i = 0;
 	while(enif_get_list_cell(env, put_list, &head, &tail)) {
 	    if(!enif_get_tuple(env, head, &arity, &put_kv_array)) {
-		return enif_make_badarg(env);    
+		    return enif_make_badarg(env);    
 	    }
 	    if(arity != 2 || !enif_inspect_binary(env, put_kv_array[0], &bin)) {
-		return enif_make_badarg(env);    
+		    return enif_make_badarg(env);    
 	    }
 	    leveldb::Slice key((const char*)bin.data, (size_t) bin.size);
 	    put_keys[i] = key;
 	    if(!enif_inspect_binary(env, put_kv_array[1], &bin)) {
-		return enif_make_badarg(env);    
+		    return enif_make_badarg(env);    
 	    }
 	    leveldb::Slice value((const char*)bin.data, (size_t) bin.size);
 	    put_values[i] = value;
@@ -342,19 +342,19 @@ static ERL_NIF_TERM options_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
         return enif_make_badarg(env);
     }
     else{
-	leveldb::Options* options = ( leveldb::Options* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::Options));
+	    leveldb::Options* options = ( leveldb::Options* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::Options));
 	
-	result = init_options(env, options_array, options);
-	/*if result is 0 then return {ok, term}*/
-	if (!result){
-	    term = enif_make_resource(env, options);
+	    result = init_options(env, options_array, options);
+	    /*if result is 0 then return {ok, term}*/
+	    if (!result){
+	        term = enif_make_resource(env, options);
 	    
-	    enif_release_resource(options);
-	    return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-	}
-	else {
-	    return enif_make_badarg(env);
-	}
+	        enif_release_resource(options);
+	        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	    }
+	    else {
+	        return enif_make_badarg(env);
+	    }
     }
 }
 
@@ -368,19 +368,19 @@ static ERL_NIF_TERM readoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
     else{
-	leveldb::ReadOptions* readoptions = ( leveldb::ReadOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::ReadOptions));
+	    leveldb::ReadOptions* readoptions = ( leveldb::ReadOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::ReadOptions));
 	
-	result = init_readoptions(env, readoptions_array, readoptions);
-	/*if result is 0 then return {ok, term}*/
-	if (!result){
-	    term = enif_make_resource(env, readoptions);
+	    result = init_readoptions(env, readoptions_array, readoptions);
+	    /*if result is 0 then return {ok, term}*/
+	    if (!result){
+	        term = enif_make_resource(env, readoptions);
 	    
-	    enif_release_resource(readoptions);
-	    return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-	}
-	else {
-	    return enif_make_badarg(env);
-	}
+	        enif_release_resource(readoptions);
+	        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	    }
+	    else {
+	        return enif_make_badarg(env);
+	    }
     }
 }
 
@@ -394,20 +394,76 @@ static ERL_NIF_TERM writeoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TER
         return enif_make_badarg(env);
     }
     else{
-	leveldb::WriteOptions* writeoptions = ( leveldb::WriteOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::WriteOptions));
+	    leveldb::WriteOptions* writeoptions = ( leveldb::WriteOptions* ) enif_alloc_resource(myOptionsResource, sizeof( leveldb::WriteOptions));
 	
-	result = init_writeoptions(env, writeoptions_array, writeoptions);
+	    result = init_writeoptions(env, writeoptions_array, writeoptions);
 
-	/*if result is 0 then return {ok, term}*/
-	if (!result){
-	    term = enif_make_resource(env, writeoptions);
+	    /*if result is 0 then return {ok, term}*/
+        if (!result){
+	        term = enif_make_resource(env, writeoptions);
 	    
-	    enif_release_resource(writeoptions);
-	    return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-	}
-	else {
-	    return enif_make_badarg(env);
-	}
+	        enif_release_resource(writeoptions);
+	        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	    }
+	    else {
+	        return enif_make_badarg(env);
+	    }
+    }
+}
+
+/*leveldb destroy*/
+static ERL_NIF_TERM destroy_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char path[MAXPATHLEN];
+    leveldb::Options* options;
+    
+    /*get path*/
+    if(argc != 2 || enif_get_string(env, argv[0], path, sizeof(path), ERL_NIF_LATIN1) <1){
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	    //return enif_make_badarg(env);
+    }
+    /*get options resource*/
+    else if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &options)) {
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+	    //Return enif_make_badarg(env);
+    }
+    else{
+	    leveldb::Status status = DestroyDB(path, *options);
+
+	    if(status.ok()){
+	        return enif_make_atom(env, "ok");
+	    }
+	    else{
+	        ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
+	        return status_tuple;
+	    }
+    }
+}
+
+/*leveldb repair*/
+static ERL_NIF_TERM repair_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    char path[MAXPATHLEN];
+    leveldb::Options* options;
+    
+    /*get path*/
+    if(argc != 2 || enif_get_string(env, argv[0], path, sizeof(path), ERL_NIF_LATIN1) <1){
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	    //return enif_make_badarg(env);
+    }
+    /*get options resource*/
+    else if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &options)) {
+	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+	    //Return enif_make_badarg(env);
+    }
+    else{
+	    leveldb::Status status = RepairDB(path, *options);
+
+	    if(status.ok()){
+	        return enif_make_atom(env, "ok");
+	    }
+	    else{
+	        ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
+	        return status_tuple;
+	    }
     }
 }
 
@@ -422,6 +478,9 @@ static ErlNifFunc nif_funcs[] = {
     {"options", 1, options_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"readoptions", 1, readoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"writeoptions", 1, writeoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+
+    {"destroy_db", 2, destroy_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"repair_db", 2, repair_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
 
     {"resource_test", 0, resource_test_nif}
 

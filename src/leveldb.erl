@@ -1,22 +1,25 @@
 -module(leveldb).
 
 -export([open_db/2,
-	 close_db/1,
-	 get/3,
-	 put/4,
-	 delete/3,
-	 write/4]).
+         close_db/1,
+         get/3,
+         put/4,
+         delete/3,
+         write/4]).
 
 -export([options/1,
-	 readoptions/1,
-	 writeoptions/1]).
+         readoptions/1,
+         writeoptions/1]).
+
+-export([destroy_db/2,
+         repair_db/2]).
 
 -export([resource_test/0]).
 
 -export_type([db/0,
               options/0,
-	      writeoptions/0,
-	      readoptions/0]).	 
+              writeoptions/0,
+              readoptions/0]).	 
 
 -on_load(init/0).
 
@@ -132,6 +135,24 @@ readoptions(_leveldb_readoptions_record) ->
 %%--------------------------------------------------------------------
 -spec writeoptions(LeveldbWriteOptions :: #leveldb_writeoptions{}) -> {ok, writeoptions()} | {error, Reason :: any()}.
 writeoptions(_leveldb_writeoptions_record) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Destroy the contents of the specified leveldb database with provided Path and Options.
+%% Returns ok or {error, Reason}.
+%% @end
+%%--------------------------------------------------------------------
+-spec destroy_db(Path :: string(), Options :: options()) -> ok | {error, Reason :: any()}.
+destroy_db(_Path, _Options)->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Try to repair the specified leveldb database with provided Path and Options.
+%% Returns ok or {error, Reason}.
+%% @end
+%%--------------------------------------------------------------------
+-spec repair_db(Path :: string(), Options :: options()) -> ok | {error, Reason :: any()}.
+repair_db(_Name, _Options)->
     erlang:nif_error(nif_library_not_loaded).
 
 %%NIF test to allocate resources
