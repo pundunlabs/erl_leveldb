@@ -12,20 +12,27 @@ APP_TARGET= $(EBIN)/$(APP_FILE)
 
 MODULES = \
 	leveldb \
-    leveldb_lib
+	leveldb_lib
 
 ERL_FILES = $(MODULES:%=%.erl)
+ERL_BEAMS = $(MODULES:%=$(EBIN)/%.beam)
 
 INCLUDE_DIRS = \
-	../include
+	../include \
 
-.PHONY: all clean
+ERL_INCLUDE = $(INCLUDE_DIRS:%=-I %)
 
-all: $(EBIN) $(APP_TARGET)
-	erlc -I $(INCLUDE_DIRS) -o $(EBIN) $(ERL_FILES)
+.PHONY: all clean beams
+
+all: $(EBIN) $(APP_TARGET) beams
+
+beams: $(ERL_BEAMS)
+
+$(EBIN)/%.beam: %.erl
+	erlc $(ERL_INCLUDE) -o $(EBIN) $<
 
 $(EBIN):
-	mkdir ../ebin
+	mkdir $@
 
 $(APP_TARGET): $(APP_SRC) 
 	@set -e; mods=`echo $(MODULES) | sed -e 's; ;,;g'` ; \
