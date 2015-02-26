@@ -25,7 +25,9 @@
          readoptions/0,
          writeoptions/0]).
 
--export([destroy_db/1,
+-export([approximate_sizes/0,
+         read_range/0,
+         destroy_db/1,
          repair_db/1]).
 
 -export([resource_test_n/1]).
@@ -133,6 +135,77 @@ put_get_delete_test() ->
     ?assertEqual(ok, leveldb:delete(DB, WriteOptions, Key)),
     ?assertEqual(ok, close_db(DB)).
 
+%%--------------------------------------------------------------------
+%% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
+%% performs N number of batch writes on it.
+%% @end
+%%--------------------------------------------------------------------
+-spec batch_test() -> ok.
+batch_test()->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    {ok, WriteOptions} = writeoptions(),
+    Batch =
+	fun(X, {DK,PKV})->
+		BK = erlang:term_to_binary(integer_to_list(X)),
+		String = lists:concat(["some example data number: ", X]),
+		BV = erlang:term_to_binary(String),
+		{[BK|DK],[{BK,BV}|PKV]}
+	end,
+    N = 100000,
+    {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,N)),
+    ?assertEqual(ok, leveldb:write(DB, WriteOptions, DeleteKeys, PutKVS)),
+    [begin {ok, _Value} = get(DB, Keys) end || Keys <- DeleteKeys],
+    ?assertEqual(ok, close_db(DB)).
+
+%%--------------------------------------------------------------------
+%% @doc Test aproximate byte size for the data stored for a range of keys
+%% from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec approximate_sizes_test() -> any().
+approximate_sizes_test() ->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    {ok, WriteOptions} = writeoptions(),
+    Batch =
+	    fun(X, {DK,PKV})->
+		    BK = erlang:term_to_binary(integer_to_list(X)),
+		    String = lists:concat(["some example data number: ", X]),
+		    BV = erlang:term_to_binary(String),
+		    {[BK|DK],[{BK,BV}|PKV]}
+	    end,
+    {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,100000)),
+    ok = leveldb:write(DB, WriteOptions,
+		               DeleteKeys, PutKVS),
+    Ranges = [{erlang:term_to_binary("1000"),erlang:term_to_binary("2500")}],
+    {ok, [Size]} = leveldb:approximate_sizes(DB, Ranges),
+    true = is_integer(Size),
+    ok = close_db(DB).
+%%--------------------------------------------------------------------
+%% @doc Test reading a range of keys from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec read_range_test() -> any().
+read_range_test() ->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    {ok, ReadOptions} = readoptions(),
+    {ok, WriteOptions} = writeoptions(),
+    Batch =
+	    fun(X, {DK,PKV})->
+		    BK = erlang:term_to_binary(integer_to_list(X)),
+		    String = lists:concat(["some example data number: ", X]),
+		    BV = erlang:term_to_binary(String),
+		    {[BK|DK],[{BK,BV}|PKV]}
+	    end,
+    {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,100000)),
+    ok = leveldb:write(DB, WriteOptions,
+		               DeleteKeys, PutKVS),
+    Range = {erlang:term_to_binary("1000"),erlang:term_to_binary("2500")},
+    {ok, KVL} = leveldb:read_range(DB, ReadOptions, Range, 1000),
+    1000 = length(KVL),
+    ok = close_db(DB).
 
 %%--------------------------------------------------------------------
 %% @doc Test repairing a leveldb database.
@@ -379,6 +452,48 @@ repair_db(Path)->
 	        ok
     end.
 
+%%--------------------------------------------------------------------
+%% @doc Test aproximate byte size for the data stored for a range of keys
+%% from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec approximate_sizes() -> any().
+approximate_sizes() ->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    Ranges = [{erlang:term_to_binary("1000"),erlang:term_to_binary("2500")},
+              {erlang:term_to_binary("18000"),erlang:term_to_binary("18500")}],
+    {ok, Sizes} = leveldb:approximate_sizes(DB, Ranges),
+    ok = close_db(DB),
+    {ok, Sizes}.
+%%--------------------------------------------------------------------
+%% @doc Test reading a range of keys from a leveldb database.
+%% @end
+%%--------------------------------------------------------------------
+-spec read_range() -> any().
+read_range() ->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    {ok, ReadOptions} = readoptions(),
+    {ok, WriteOptions} = writeoptions(),
+    Limit = 1000000,
+    Batch =
+	    fun(X, {DK,PKV})->
+		    BK = erlang:term_to_binary(integer_to_list(X)),
+		    String = lists:concat(["some example data number: ", X]),
+		    BV = erlang:term_to_binary(String),
+		    {[BK|DK],[{BK,BV}|PKV]}
+	    end,
+    {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,1500000)),
+    ok = leveldb:write(DB, WriteOptions,
+		               DeleteKeys, PutKVS),
+    Range = {erlang:term_to_binary("1000"),erlang:term_to_binary("1200000")},
+    {ok, KVL} = leveldb:read_range(DB, ReadOptions, Range, Limit),
+
+    ok = close_db(DB),
+    {ok, [{binary_to_term(K), binary_to_term(V)} || {K, V} <- KVL]}.
+
+%%--------------------------------------------------------------------
 %%--------------------------------------------------------------------
 %% @doc This function is obsolete and has no consistent behavior.
 %% @end

@@ -14,6 +14,9 @@
 -export([destroy_db/2,
          repair_db/2]).
 
+-export([approximate_sizes/2,
+         read_range/4]).
+
 -export([resource_test/0]).
 
 -export_type([db/0,
@@ -32,7 +35,9 @@
 
 -type value() :: binary() | string().
 -type key() :: binary() | string().
-
+-type start() :: key().
+-type limit() :: key().
+-type range() :: {start(), limit()}.
 
 init() ->
     Dir = "../priv",
@@ -153,6 +158,27 @@ destroy_db(_Path, _Options)->
 %%--------------------------------------------------------------------
 -spec repair_db(Path :: string(), Options :: options()) -> ok | {error, Reason :: any()}.
 repair_db(_Name, _Options)->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Approximate the file system space used by keys in given Range for a database.
+%% Returned size is compressed size and might be smaller than user data.
+%% The result might not include the size of recently written data.
+%% @end
+%%--------------------------------------------------------------------
+-spec approximate_sizes(DB:: db(), Ranges :: [range()]) -> {ok, [Bytes :: integer()]} | {error, Reason :: any()}.
+approximate_sizes(_DB, _Ranges) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Read a set of Key/Value Pairs in between key range that is sopecified by Range.
+%% Limit the number of pairs to be read by Limit.
+%% @end
+%%--------------------------------------------------------------------
+-spec read_range(DB:: db(), ReadOptions :: readoptions(),
+                 Range :: range(), Limit :: pos_integer()) ->
+    {ok, [{key(), value()}]} | {error, Reason :: any()}.
+read_range(_DB, _ReadOptions, _Range, _Limit) ->
     erlang:nif_error(nif_library_not_loaded).
 
 %%NIF test to allocate resources
