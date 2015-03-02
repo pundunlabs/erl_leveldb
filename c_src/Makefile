@@ -9,6 +9,10 @@ CPP_FILES = \
 HEADER_FILES = \
     leveldb_nif.h
 
+UTILS_HEADERS = \
+    keyvaluepair.h \
+
+
 UTILS_SOURCES=\
     leveldb_utils.cpp
 
@@ -21,15 +25,16 @@ else
 override LDFLAGS += -shared -fpic -L../deps/leveldb -lleveldb -lpthread -I ../deps/leveldb/include
 endif
 
-all: $(PRIV_DIR)/leveldb_nif.so \
-    $(PRIV_DIR)/leveldb_utils.so
+all: $(PRIV_DIR) $(PRIV_DIR)/leveldb_nif.so \
+    $(PRIV_DIR)/leveldb_utils.so \
+
+$(PRIV_DIR):
+	mkdir -p $@
 
 $(PRIV_DIR)/leveldb_nif.so: $(CPP_FILES) $(HEADER_FILES)
-	mkdir -p $(PRIV_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPP_FILES) -o $@
 
-$(PRIV_DIR)/leveldb_utils.so:
-	mkdir -p $(PRIV_DIR)
+$(PRIV_DIR)/leveldb_utils.so: $(UTILS_SOURCES) $(UTILS_HEADERS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(UTILS_SOURCES) -o $@
 
 clean:
