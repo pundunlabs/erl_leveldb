@@ -15,17 +15,21 @@ class KeyValuePair : public Slice {
 
         /* Return the integer value of tag */
         const int tag() const { return tag_; }
+        /* Return a pointer to the referenced key */
+        const char* key() const { return data(); }
+        /* Return the length (in bytes) of the referenced key */
+        size_t key_size() const { return size(); }
         /* Return a pointer to the referenced value */
         const char* value() const { return value_; }
         /* Return the length (in bytes) of the referenced value */
         size_t value_size() const { return value_size_; }
         /*Compare function to be used by STL: Algorithm*/
         bool operator()(const KeyValuePair& a, const KeyValuePair& b) const {
-            if ( a.compare(b) > 0){
-                return false;
+            if ( a.compare(b) < 0){
+                return true;
             }
             else {
-                return true;
+                return false;
             }
         }
     private:

@@ -12,7 +12,8 @@ HEADER_FILES = \
 UTILS_SOURCES=\
     leveldb_utils.cpp
 
-override CFLAGS += -std=c++11 -Wall -g -O3 -fPIC $(shell erl -noinput -eval 'io:format("-I~s/erts-~s/include", [code:root_dir(), erlang:system_info(version)]), halt(0).')
+#override CFLAGS += -std=c++11 -Wall -g -O3 -fPIC $(shell erl -noinput -eval 'io:format("-I~s/erts-~s/include", [code:root_dir(), erlang:system_info(version)]), halt(0).')
+override CFLAGS += -Wall -g -O3 -fPIC $(shell erl -noinput -eval 'io:format("-I~s/erts-~s/include", [code:root_dir(), erlang:system_info(version)]), halt(0).')
 
 ifeq ($(shell uname -s), Darwin)
 override LDFLAGS +=  -bundle -flat_namespace -undefined suppress -fpic  -L../deps/leveldb -lleveldb -lpthread -I ../deps/leveldb/include

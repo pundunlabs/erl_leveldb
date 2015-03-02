@@ -12,7 +12,8 @@ APP_TARGET= $(EBIN)/$(APP_FILE)
 
 MODULES = \
 	leveldb \
-	leveldb_lib
+	leveldb_lib \
+    leveldb_utils
 
 ERL_FILES = $(MODULES:%=%.erl)
 ERL_BEAMS = $(MODULES:%=$(EBIN)/%.beam)
