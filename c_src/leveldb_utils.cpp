@@ -41,7 +41,7 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     }
 
     /*Declare an array of vectors of type kvp struct (Key/Value Pair)*/
-    queue<KeyValuePair> kvlq_array[kvls_len];
+    vector<KeyValuePair> kvlq_array[kvls_len];
     
     /*Declare a vector of type kvp struct (Key/Value Pair) to use as min heap*/
     vector<KeyValuePair> maxheap;
@@ -53,7 +53,9 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
             return enif_make_badarg(env);
         }
         
-        queue<KeyValuePair> kvpq;
+        vector<KeyValuePair> kvpq;
+	kvpq.reserve(len);
+
         bool at_head = true;
         while(enif_get_list_cell(env, head, &h, &t)){
             if(!enif_get_tuple(env, h, &arity, &tuple)) {
@@ -66,18 +68,15 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
                 return enif_make_badarg(env);
             }
             
-            cout << "read: "<< string((const char*)keybin.data, keybin.size) << ": "  << string((const char*)valuebin.data, valuebin.size);
             KeyValuePair kvp(i, (const char*)keybin.data, (size_t) keybin.size,
                              (const char*)valuebin.data, (size_t) valuebin.size);
             
             if (at_head) {
                 maxheap.push_back(kvp);
-                cout << " heap: "<< string(kvp.key(), kvp.key_size()) << ": "  << string(kvp.value(), kvp.value_size()) << endl;
                 at_head = false;    
             }
             else {
-            cout << " queue: "<< string((const char*)keybin.data, keybin.size) << ": "  << string((const char*)valuebin.data, valuebin.size) << endl;
-                kvpq.push( kvp );
+                kvpq.push_back( kvp );
             }
             total_kvps++;
             head = t;
@@ -106,7 +105,6 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     while (!maxheap.empty()) {
         /*Get root elemenet of the heap and put into merged_kvls*/
         KeyValuePair kvp = maxheap.front();
-        cout << string(kvp.key(), kvp.key_size()) << ": "  << string(kvp.value(), kvp.value_size()) << endl;
         tag = kvp.tag();
         /*Construct key_term*/
         enif_alloc_binary(kvp.key_size(), &keybin);
@@ -122,11 +120,9 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
         pop_heap ( maxheap.begin(), maxheap.end(), comp ); maxheap.pop_back();
         /*Push new element from kvl list of tag if not empty*/
         if (!kvlq_array[tag].empty()) {
-            cout << "Front: "<<string(kvlq_array[tag].front().key(), kvlq_array[tag].front().key_size()) << ": "  << string(kvlq_array[tag].front().value(), kvlq_array[tag].front().value_size()) << endl;
-
             maxheap.push_back( kvlq_array[tag].front() ); 
             push_heap ( maxheap.begin(), maxheap.end(), comp );
-            kvlq_array[tag].pop ();
+            kvlq_array[tag].erase(kvlq_array[tag].begin());
         }
     }
     kvl = enif_make_list_from_array(env, &merged_kvls[0], merged_kvls.size());
