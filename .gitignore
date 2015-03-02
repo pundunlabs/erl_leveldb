@@ -27,7 +27,7 @@ erl_crash.dump
 *.swp
 
 #ignore generated libraries
-*/leveldb_nif.so
+*.so
 
 # ignore .plts (Dialyzer PLT directory)
 .plts

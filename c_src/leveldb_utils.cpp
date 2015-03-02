@@ -41,7 +41,7 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     }
 
     /*Declare an array of vectors of type kvp struct (Key/Value Pair)*/
-    std::queue<KeyValuePair> kvlq_array[kvls_len];
+    queue<KeyValuePair> kvlq_array[kvls_len];
     
     /*Declare a vector of type kvp struct (Key/Value Pair) to use as min heap*/
     vector<KeyValuePair> maxheap;
@@ -102,21 +102,28 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
 
     /*Use int tag to keep track of an heap elements original vector*/
     int tag;
-    KeyValuePair kvp;
+    
     while (!maxheap.empty()) {
         /*Get root elemenet of the heap and put into merged_kvls*/
-        kvp = maxheap.front();
+        KeyValuePair kvp = maxheap.front();
         cout << string(kvp.key(), kvp.key_size()) << ": "  << string(kvp.value(), kvp.value_size()) << endl;
         tag = kvp.tag();
+        /*Construct key_term*/
+        enif_alloc_binary(kvp.key_size(), &keybin);
         memcpy(keybin.data, kvp.key(), kvp.key_size());
         key_term = enif_make_binary(env, &keybin);
+        /*Construct value_term*/
+        enif_alloc_binary(kvp.value_size(), &valuebin);
         memcpy(valuebin.data, kvp.value(), kvp.value_size());
         value_term = enif_make_binary(env, &valuebin);
+        /*Push root of heapp to merged_kvls vector */
         merged_kvls.push_back( enif_make_tuple2(env, key_term, value_term) );
         /*Pop root element of the heap*/
         pop_heap ( maxheap.begin(), maxheap.end(), comp ); maxheap.pop_back();
         /*Push new element from kvl list of tag if not empty*/
         if (!kvlq_array[tag].empty()) {
+            cout << "Front: "<<string(kvlq_array[tag].front().key(), kvlq_array[tag].front().key_size()) << ": "  << string(kvlq_array[tag].front().value(), kvlq_array[tag].front().value_size()) << endl;
+
             maxheap.push_back( kvlq_array[tag].front() ); 
             push_heap ( maxheap.begin(), maxheap.end(), comp );
             kvlq_array[tag].pop ();
