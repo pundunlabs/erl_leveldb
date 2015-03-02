@@ -25,18 +25,17 @@ else
 override LDFLAGS += -shared -fpic -L../deps/leveldb -lleveldb -lpthread -I ../deps/leveldb/include
 endif
 
-all: $(PRIV_DIR) $(PRIV_DIR)/leveldb_nif.so \
-    $(PRIV_DIR)/leveldb_utils.so \
+all: $(PRIV_DIR) $(PRIV_DIR)/leveldb_nif.so $(PRIV_DIR)/leveldb_utils.so 
 
 $(PRIV_DIR):
 	mkdir -p $@
 
 $(PRIV_DIR)/leveldb_nif.so: $(CPP_FILES) $(HEADER_FILES)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CPP_FILES) -o $@
+	$(CC) $(CFLAGS) $(CPP_FILES) $(LDFLAGS) -o $@
 
 $(PRIV_DIR)/leveldb_utils.so: $(UTILS_SOURCES) $(UTILS_HEADERS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(UTILS_SOURCES) -o $@
+	$(CC) $(CFLAGS) $(UTILS_SOURCES) $(LDFLAGS) -o $@
 
 clean:
-	$(RM) $(PRIV_DIR)/leveldb_nif.so \
+	$(RM) $(PRIV_DIR)/leveldb_nif.so
 	$(RM) $(PRIV_DIR)/leveldb_utils.so
