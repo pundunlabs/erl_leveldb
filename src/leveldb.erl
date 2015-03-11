@@ -33,8 +33,6 @@
 -opaque writeoptions() :: binary().
 -opaque readoptions() :: binary().
 
--type value() :: binary() | string().
--type key() :: binary() | string().
 -type start() :: key().
 -type limit() :: key().
 -type range() :: {start(), limit()}.

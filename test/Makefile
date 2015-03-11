@@ -8,6 +8,7 @@ RM ?= rm -f
 MODULES = \
 	phofs \
 	leveldb_test \
+	leveldb_utils_test \
 
 ERL_FILES = $(MODULES:%=%.erl)
 ERL_BEAMS = $(MODULES:%=$(EBIN)/%.beam)

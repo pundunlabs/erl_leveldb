@@ -1,5 +1,11 @@
 %% leveldb related macros and records.
 
+-type value() :: binary() | string().
+-type key() :: binary() | string().
+-type kvp() :: {key(), value()}.
+-type kvl() :: [kvp()].
+-type time() :: integer().
+
 -record(leveldb_options,{
 	  %% -------------------
   	  %% Parameters that affect behavior
