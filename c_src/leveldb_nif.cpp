@@ -472,50 +472,41 @@ static ERL_NIF_TERM approximate_sizes_nif(ErlNifEnv* env, int argc, const ERL_NI
 
     /*get db_ptr resource*/
     if (argc != 2 || !enif_get_resource(env, argv[0], myDBResource, (void **) &db_ptr)) {
-	    return enif_make_badarg(env);
+	return enif_make_badarg(env);
     }
     /*get ranges resource*/
     else if (!enif_get_list_length(env, range_list, &ranges_size)) {
-	    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "ranges"));
-	    //Return enif_make_badarg(env);
+	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "ranges"));
+	//Return enif_make_badarg(env);
     }
     else{
-	    leveldb::Slice start_keys[ranges_size];
-	    leveldb::Slice limit_keys[ranges_size];
+	vector <leveldb::Range>  ranges;    
+	ranges.reserve( ranges_size );
 
-	    unsigned int i = 0;
-	    int arity;
-	    const ERL_NIF_TERM* range_array;
-	    while(enif_get_list_cell(env, range_list, &head, &tail)) {
-	        if(!enif_get_tuple(env, head, &arity, &range_array)) {
-		        return enif_make_badarg(env);
-	        }
-	        if(arity != 2 || !enif_inspect_binary(env, range_array[0], &bin)) {
-		        return enif_make_badarg(env);
-	        }
-	        leveldb::Slice start((const char*)bin.data, (size_t) bin.size);
-	        start_keys[i] = start;
-	        if(!enif_inspect_binary(env, range_array[1], &bin)) {
-		        return enif_make_badarg(env);
-	        }
-	        leveldb::Slice limit((const char*)bin.data, (size_t) bin.size);
-	        limit_keys[i] = limit;
-	        i++;
-	        range_list = tail;
+	int arity;
+	const ERL_NIF_TERM* range_array;
+	while(enif_get_list_cell(env, range_list, &head, &tail)) {
+	    if(!enif_get_tuple(env, head, &arity, &range_array)) {
+		return enif_make_badarg(env);
 	    }
-
-        leveldb::Range ranges[ranges_size];
-
-	    for (i=0; i<ranges_size; i++){
-	        ranges[i] = leveldb::Range(start_keys[i], limit_keys[i]);
+	    if(arity != 2 || !enif_inspect_binary(env, range_array[0], &bin)) {
+		return enif_make_badarg(env);
 	    }
+	    leveldb::Slice start((const char*)bin.data, (size_t) bin.size);
+	    if(!enif_inspect_binary(env, range_array[1], &bin)) {
+		return enif_make_badarg(env);
+	    }
+	    leveldb::Slice limit((const char*)bin.data, (size_t) bin.size);
+	    ranges.push_back( leveldb::Range(start, limit) );
+	    range_list = tail;
+	}
 
-        uint64_t sizes[ranges_size];
+	uint64_t sizes[ranges_size];
 
-	    (*db_ptr)->GetApproximateSizes(ranges, ranges_size, sizes);
+	(*db_ptr)->GetApproximateSizes(&ranges[0], ranges_size, sizes);
 
         ERL_NIF_TERM size_list = enif_make_list(env, 0);
-        while (ranges_size > 0){
+        while (ranges_size > 0) {
             ranges_size--;
             size_list = enif_make_list_cell(env, enif_make_uint64(env, sizes[ranges_size]), size_list);
         }
