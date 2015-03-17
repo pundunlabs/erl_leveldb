@@ -46,14 +46,12 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     /*Declare a deque of type kvp struct (Key/Value Pair) to use as max heap*/
     deque<KeyValuePair> maxheap;
 
-    int i = 0;
+    signed char i = 0;
     while(enif_get_list_cell(env, kvls, &head, &tail)){
         if(!enif_get_list_length(env, head, &len)) {
             return enif_make_badarg(env);
         }
         
-        deque<KeyValuePair> kvpq;
-
         bool at_head = true;
         while(enif_get_list_cell(env, head, &h, &t)){
             if(!enif_get_tuple(env, h, &arity, &tuple)) {
@@ -73,12 +71,12 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
                 at_head = false;    
             }
             else {
-                kvpq.push_back( kvp );
+                kvlq_array[i].push_back( kvp );
             }
             total_kvps++;
             head = t;
         }
-        kvlq_array[i++] = kvpq;
+        i++;
         kvls = tail;
     }
    
@@ -86,16 +84,16 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     KeyValuePair comp; 
     make_heap (maxheap.begin(), maxheap.end(), comp);
     
-    /*Declare an array that keeps Erlang NIF Term representations*/
-    ERL_NIF_TERM * merged_kvls = new ERL_NIF_TERM[total_kvps];
+    /*Declare a vector that keeps Erlang NIF Term representations*/
+    vector<ERL_NIF_TERM> merged_kvls;
+    merged_kvls.reserve(total_kvps);
 
     /*Declare key and value erlang resources*/
     ERL_NIF_TERM key_term;
     ERL_NIF_TERM value_term;
 
     /*Use int tag to keep track of an heap elements original vector*/
-    int tag;
-    i = 0;
+    signed char tag;
     while (!maxheap.empty()) {
         /*Get root elemenet of the heap and put into merged_kvls*/
         KeyValuePair kvp = maxheap.front();
@@ -109,7 +107,7 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
 	value_term = enif_make_binary(env, &valuebin);
         /*Push root of heap to merged_kvls vector */
         //merged_kvls.push_back( enif_make_tuple2(env, key_term, value_term) );
-        merged_kvls[i++] = enif_make_tuple2(env, key_term, value_term);
+        merged_kvls.push_back( enif_make_tuple2(env, key_term, value_term) );
 	/*Pop root element of the heap*/
         pop_heap ( maxheap.begin(), maxheap.end(), comp ); maxheap.pop_back();
         /*Push new element from kvl list of tag if not empty*/
@@ -120,9 +118,7 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
 	    //kvlq_array[tag].erase(kvlq_array[tag].begin());
         }
     }
-    //kvl = enif_make_list_from_array(env, &merged_kvls[0], merged_kvls.size());
-    kvl = enif_make_list_from_array(env, &merged_kvls[0], total_kvps);
-    delete [] merged_kvls;
+    kvl = enif_make_list_from_array(env, &merged_kvls[0], merged_kvls.size());
     return enif_make_tuple2(env, enif_make_atom(env, "ok"), kvl);
 }
 

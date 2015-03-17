@@ -3,6 +3,8 @@
 #define LEVELDB_NIF_H
 
 #include "leveldb/db.h"
+#include "leveldb/comparator.h"
+#include "descendingcomparator.h"
 #include "leveldb/write_batch.h"
 #include "erl_nif.h"
 

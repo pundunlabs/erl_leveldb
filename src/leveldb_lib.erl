@@ -33,6 +33,9 @@ build_leveldb_options(OptionsPL) ->
                             LeveldbOptions::#leveldb_options{}) -> ok | {error, Reason::term()}.
 build_leveldb_options([], LeveldbOptions) ->
     LeveldbOptions;
+build_leveldb_options([{comparator, Int}|Rest], LeveldbOptions)
+    when is_integer(Int) ->
+    build_leveldb_options(Rest, LeveldbOptions#leveldb_options{comparator = Int});
 build_leveldb_options([{create_if_missing, Bool}|Rest], LeveldbOptions)
     when Bool == false; Bool == true ->
     build_leveldb_options(Rest, LeveldbOptions#leveldb_options{create_if_missing = Bool});

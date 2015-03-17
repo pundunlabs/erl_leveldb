@@ -15,7 +15,7 @@
          repair_db/2]).
 
 -export([approximate_sizes/2,
-         read_range/4]).
+         read_range/5]).
 
 -export([resource_test/0]).
 
@@ -173,10 +173,10 @@ approximate_sizes(_DB, _Ranges) ->
 %% Limit the number of pairs to be read by Limit.
 %% @end
 %%--------------------------------------------------------------------
--spec read_range(DB:: db(), ReadOptions :: readoptions(),
+-spec read_range(DB:: db(), Options :: options(), ReadOptions :: readoptions(),
                  Range :: range(), Limit :: pos_integer()) ->
     {ok, [{key(), value()}]} | {error, Reason :: any()}.
-read_range(_DB, _ReadOptions, _Range, _Limit) ->
+read_range(_DB, _Options, _ReadOptions, _Range, _Limit) ->
     erlang:nif_error(nif_library_not_loaded).
 
 %%NIF test to allocate resources

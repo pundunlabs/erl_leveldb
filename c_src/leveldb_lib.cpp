@@ -1,9 +1,10 @@
 #include "leveldb_nif.h"
-#include "leveldb/db.h"
 #include <assert.h>
 
 #include <iostream>
+
 using namespace std;
+using namespace leveldb;
 
 static int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
 {
@@ -22,7 +23,7 @@ static int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
 }
 
 int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options* options) {
-    int temp;
+    int temp = -1;
     
     new(options) leveldb::Options;
     
@@ -41,6 +42,16 @@ int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Opt
     // 12. compression,
     // 13. filter_policy*/
     
+    //Set comparator
+    if (!enif_get_int(env, options_array[1], &temp)){
+	return -1;
+    }
+    else {
+	if ( temp == 1 ) {
+	    options->comparator = new DescendingComparator;
+	}
+    }
+     
     //Set create_if_missing
     temp = get_bool(env, options_array[2]);
     if (temp == -1) {
