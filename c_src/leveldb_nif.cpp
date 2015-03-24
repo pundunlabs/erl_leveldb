@@ -598,22 +598,22 @@ static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"open_db", 2, open_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"close_db", 1, close_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"get", 3, get_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"put", 4, put_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"delete", 3, delete_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"write", 4, write_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"open_db", 2, open_db_nif},
+    {"close_db", 1, close_db_nif},
+    {"get", 3, get_nif},
+    {"put", 4, put_nif},
+    {"delete", 3, delete_nif},
+    {"write", 4, write_nif},
 
-    {"options", 1, options_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"readoptions", 1, readoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"writeoptions", 1, writeoptions_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"options", 1, options_nif},
+    {"readoptions", 1, readoptions_nif},
+    {"writeoptions", 1, writeoptions_nif},
 
-    {"destroy_db", 2, destroy_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"repair_db", 2, repair_db_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"destroy_db", 2, destroy_db_nif},
+    {"repair_db", 2, repair_db_nif},
 
-    {"approximate_sizes", 2, approximate_sizes_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"read_range", 5, read_range_nif, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"approximate_sizes", 2, approximate_sizes_nif},
+    {"read_range", 5, read_range_nif},
 
     {"resource_test", 0, resource_test_nif}
 
