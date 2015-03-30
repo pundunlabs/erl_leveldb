@@ -32,7 +32,7 @@ class KeyValuePair : public Slice {
             }
         }
     private:
-        signed char tag_;
+        unsigned short int tag_;
 	ErlNifBinary value_;
 };
 }

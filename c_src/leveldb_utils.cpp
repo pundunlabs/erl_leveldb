@@ -40,18 +40,18 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
         return enif_make_badarg(env);
     }
 
-    /*Declare an array of deques of type kvp instances (Key/Value Pair)*/
-    deque<KeyValuePair> kvlq_array[kvls_len];
-    
+    /*Declare a vector of deques of type kvp instances (Key/Value Pair)*/
+    vector < deque <KeyValuePair> > kvlq;
+    kvlq.reserve( kvls_len );
     /*Declare a deque of type kvp struct (Key/Value Pair) to use as max heap*/
     deque<KeyValuePair> maxheap;
 
-    signed char i = 0;
+    unsigned short int i = 0;
     while(enif_get_list_cell(env, kvls, &head, &tail)){
         if(!enif_get_list_length(env, head, &len)) {
             return enif_make_badarg(env);
         }
-        
+	deque <KeyValuePair> kvl; 
         bool at_head = true;
         while(enif_get_list_cell(env, head, &h, &t)){
             if(!enif_get_tuple(env, h, &arity, &tuple)) {
@@ -71,12 +71,13 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
                 at_head = false;    
             }
             else {
-                kvlq_array[i].push_back( kvp );
+                kvl.push_back( kvp );
             }
             total_kvps++;
             head = t;
         }
-        i++;
+	kvlq.push_back( kvl );
+	i++;
         kvls = tail;
     }
    
@@ -93,8 +94,8 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     ERL_NIF_TERM value_term;
 
     /*Use int tag to keep track of an heap elements original vector*/
-    signed char tag;
-    while (!maxheap.empty()) {
+    unsigned short int tag = 0;
+    while ( !maxheap.empty() ) {
         /*Get root elemenet of the heap and put into merged_kvls*/
         KeyValuePair kvp = maxheap.front();
         tag = kvp.tag();
@@ -111,11 +112,10 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
 	/*Pop root element of the heap*/
         pop_heap ( maxheap.begin(), maxheap.end(), comp ); maxheap.pop_back();
         /*Push new element from kvl list of tag if not empty*/
-        if (!kvlq_array[tag].empty()) {
-            maxheap.push_back( kvlq_array[tag].front() ); 
+        if ( !kvlq.at(tag).empty() ) {
+            maxheap.push_back( kvlq.at(tag).front() ); 
             push_heap ( maxheap.begin(), maxheap.end(), comp );
-            kvlq_array[tag].pop_front ();
-	    //kvlq_array[tag].erase(kvlq_array[tag].begin());
+            kvlq.at(tag).pop_front();
         }
     }
     kvl = enif_make_list_from_array(env, &merged_kvls[0], merged_kvls.size());

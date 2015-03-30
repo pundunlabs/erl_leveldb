@@ -27,7 +27,7 @@ erl_crash.dump
 *.swp
 
 #ignore generated libraries
-*.so
+*.so*
 
 # ignore .plts (Dialyzer PLT directory)
 .plts
