@@ -1,5 +1,5 @@
-{application, leveldb,
- [{description, "LevelDB api"},
+{application, erl_leveldb,
+ [{description, "Erlang wrapper for LevelDB"},
   {vsn, "%VSN%"},
   {modules, [%MODULES%]},
   {registered, []},

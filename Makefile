@@ -1,6 +1,6 @@
 include ./vsn.mk
-VSN=$(LEVELDB_VSN)
-APP_NAME = leveldb
+VSN=$(ERL_LEVELDB_VSN)
+APP_NAME = erl_leveldb
 MAKE ?= make
 SUBDIRS = c_src src test
 
@@ -28,8 +28,8 @@ eunit:
 
 clean:
 	@for i in $(SUBDIRS); do \
-    echo "Cleaning in $$i..."; \
-    (cd $$i; $(MAKE) clean); done
+	echo "Cleaning in $$i..."; \
+	(cd $$i; $(MAKE) clean); done
 
 realclean: clean
 	 rm -rf ./deps/*

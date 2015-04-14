@@ -1,11 +1,11 @@
 include ../vsn.mk
-VSN=$(LEVELDB_VSN)
+VSN=$(ERL_LEVELDB_VSN)
 
 EBIN = ../ebin
 
 RM ?= rm -f
 
-APP_NAME = leveldb
+APP_NAME = erl_leveldb
 APP_FILE= $(APP_NAME).app
 APP_SRC= $(APP_FILE).src
 APP_TARGET= $(EBIN)/$(APP_FILE)
@@ -13,7 +13,7 @@ APP_TARGET= $(EBIN)/$(APP_FILE)
 MODULES = \
 	leveldb \
 	leveldb_lib \
-    leveldb_utils
+	leveldb_utils
 
 ERL_FILES = $(MODULES:%=%.erl)
 ERL_BEAMS = $(MODULES:%=$(EBIN)/%.beam)
