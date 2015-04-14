@@ -10,7 +10,8 @@
 -export([concurrency_basic/2]).
 
 -export([open_close/0,
-         put_get_delete/1,
+         open_close_destroy/0,
+	 put_get_delete/1,
          put_n/1,
          get_key/1,
          write_n/1]).
@@ -261,7 +262,8 @@ concurrency_basic(N, Count)->
     {ok, L1}.
 
 %%--------------------------------------------------------------------
-%% @doc A simple test funtion that opens a leveldb database under "/tmp/basicdb"
+%% @doc A simple test funtion that opens and closes a leveldb database
+%% under "/tmp/basicdb"
 %% @end
 %%--------------------------------------------------------------------
 -spec open_close() -> ok.
@@ -269,6 +271,20 @@ open_close()->
     {ok, Options} = options(),
     {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
     ok = close_db(DB).
+
+%%--------------------------------------------------------------------
+%% @doc A simple test funtion that opens, closes, destroys and again
+%% opens, closes a leveldb database under "/tmp/basicdb"
+%% @end
+%%--------------------------------------------------------------------
+-spec open_close_destroy() -> ok.
+open_close_destroy()->
+    {ok, Options} = options(),
+    {ok, DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    ok = close_db(DB),
+    ok = leveldb:destroy_db("/tmp/basicdb", Options),
+    {ok, New_DB} = leveldb:open_db(Options, "/tmp/basicdb"),
+    ok = close_db(New_DB).
 
 %%--------------------------------------------------------------------
 %% @doc Test function that opens a leveldb database under "/tmp/basicdb" and
