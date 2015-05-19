@@ -8,6 +8,9 @@ deps
 doc
 !doc/overview.edoc
 
+#eunit dir
+.eunit
+
 # ignore sasl_log
 sasl_log
 

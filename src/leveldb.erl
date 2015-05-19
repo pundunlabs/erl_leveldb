@@ -15,12 +15,22 @@
          repair_db/2]).
 
 -export([approximate_sizes/2,
-         read_range/5]).
+         approximate_size/2,
+	 read_range/5,
+	 read_range_n/4]).
+
+-export([iterator/2,
+         first/1,
+         last/1,
+	 seek/2,
+	 next/1,
+	 prev/1]).
 
 -export([resource_test/0]).
 
 -export_type([db/0,
-              options/0,
+              it/0,
+	      options/0,
               writeoptions/0,
               readoptions/0]).	 
 
@@ -29,6 +39,7 @@
 -include("leveldb.hrl").
 
 -opaque db() :: binary().
+-opaque it() :: binary().
 -opaque options() :: binary().
 -opaque writeoptions() :: binary().
 -opaque readoptions() :: binary().
@@ -164,8 +175,20 @@ repair_db(_Name, _Options)->
 %% The result might not include the size of recently written data.
 %% @end
 %%--------------------------------------------------------------------
--spec approximate_sizes(DB:: db(), Ranges :: [range()]) -> {ok, [Bytes :: integer()]} | {error, Reason :: any()}.
+-spec approximate_sizes(DB :: db(), Ranges :: [range()]) ->
+    {ok, [Bytes :: integer()]} | {error, Reason :: any()}.
 approximate_sizes(_DB, _Ranges) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Approximate the file system space used a database.
+%% Returned size is compressed size and might be smaller than user data.
+%% The result might not include the size of recently written data.
+%% @end
+%%--------------------------------------------------------------------
+-spec approximate_size(DB :: db(), ReadOptions :: readoptions()) ->
+{ok, Bytes :: integer()} | {error, Reason :: any()}.
+approximate_size(_DB, _ReadOptions) ->
     erlang:nif_error(nif_library_not_loaded).
 
 %%--------------------------------------------------------------------
@@ -173,10 +196,79 @@ approximate_sizes(_DB, _Ranges) ->
 %% Limit the number of pairs to be read by Limit.
 %% @end
 %%--------------------------------------------------------------------
--spec read_range(DB:: db(), Options :: options(), ReadOptions :: readoptions(),
+-spec read_range(DB :: db(), Options :: options(), ReadOptions :: readoptions(),
                  Range :: range(), Limit :: pos_integer()) ->
     {ok, [{key(), value()}]} | {error, Reason :: any()}.
 read_range(_DB, _Options, _ReadOptions, _Range, _Limit) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Read N number of Key/Value Pairs from start key.
+%% @end
+%%--------------------------------------------------------------------
+-spec read_range_n(DB :: db(), ReadOptions :: readoptions(),
+                 StartKey :: key(), N :: pos_integer()) ->
+    {ok, [{key(), value()}]} | {error, Reason :: any()}.
+read_range_n(_DB, _ReadOptions, _StartKey, _N) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Create a LevelDB Iterator and get NIF resource.
+%% @end
+%%--------------------------------------------------------------------
+-spec iterator(DB :: db(), ReadOptions :: readoptions()) ->
+    {ok, binary()} | {error, Reason :: any()}.
+iterator(_DB, _ReadOptions) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Iterate to first entry in LevelDB database and return first
+%% key/value pair.
+%% @end
+%%--------------------------------------------------------------------
+-spec first(It :: it()) ->
+    {ok, {key(), value()}} | {error, Reason :: any()}.
+first(_It) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Iterate to last entry in LevelDB database and return last
+%% key/value pair.
+%% @end
+%%--------------------------------------------------------------------
+-spec last(It :: it()) ->
+    {ok, {key(), value()}} | {error, Reason :: any()}.
+last(_It) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Iterate to the entry specified by StartKey in LevelDB database
+%% and return seeked key/value pair.
+%% @end
+%%--------------------------------------------------------------------
+-spec seek(It :: it(), StartKey :: key()) ->
+    {ok, {key(), value()}} | {error, Reason :: any()}.
+seek(_DB, _StartKey) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Iterate to next entry in LevelDB database and return
+%% the next key/value pair.
+%% @end
+%%--------------------------------------------------------------------
+-spec next(It :: it()) ->
+    {ok, {key(), value()}} | {error, Reason :: any()}.
+next(_It) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Iterate to previous entry in LevelDB database and return
+%% the previous key/value pair.
+%% @end
+%%--------------------------------------------------------------------
+-spec prev(It :: it()) ->
+    {ok, {key(), value()}} | {error, Reason :: any()}.
+prev(_It) ->
     erlang:nif_error(nif_library_not_loaded).
 
 %%NIF test to allocate resources
