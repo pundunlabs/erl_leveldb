@@ -1,0 +1,9 @@
+#!/bin/bash
+
+OS=`uname -s`
+if [ "$OS" == "Darwin" ] ; then
+  export DYLD_LIBRARY_PATH=$(pwd)/deps/leveldb
+else
+  export LD_LIBRARY_PATH=$(pwd)/deps/leveldb
+fi
+
