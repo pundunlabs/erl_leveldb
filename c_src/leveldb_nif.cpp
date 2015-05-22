@@ -535,17 +535,23 @@ static ERL_NIF_TERM approximate_size_nif(ErlNifEnv* env, int argc, const ERL_NIF
     else{
 	leveldb::Iterator* it = (*db_ptr)->NewIterator(*readoptions);
 	it->SeekToFirst();
-	string start = it->key().ToString();
-	it->SeekToLast();
-	string end = it->key().ToString();
-	leveldb::Range ranges[1];
-	ranges[0] = leveldb::Range(start, end);
-	uint64_t size[1];
+	if ( it->Valid() ){
+	    string start = it->key().ToString();
+	    it->SeekToLast();
+	    string end = it->key().ToString();
+	    leveldb::Range ranges[1];
+	    ranges[0] = leveldb::Range(start, end);
+	    uint64_t size[1];
 
-	(*db_ptr)->GetApproximateSizes(ranges, 1, size);
+	    (*db_ptr)->GetApproximateSizes(ranges, 1, size);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"),
-				enif_make_uint64(env, size[0]));
+	    return enif_make_tuple2(env, enif_make_atom(env, "ok"),
+				    enif_make_uint64(env, size[0]));
+	}
+	else {
+	    return enif_make_tuple2(env, enif_make_atom(env, "ok"),
+				    enif_make_uint64(env, 0));
+	}
     }
 }
 
@@ -741,10 +747,23 @@ static ERL_NIF_TERM iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     }
 }
 
+static ERL_NIF_TERM delete_iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    leveldb::Iterator** it_ptr;
+
+    /*get it_ptr resource*/
+    if (argc != 1 || !enif_get_resource(env, argv[0], myDBResource, (void **) &it_ptr)) {
+	return enif_make_badarg(env);
+    }
+    else{
+	delete *it_ptr;
+	return enif_make_atom(env, "ok");
+    }
+}
+
 static ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::Iterator** it_ptr;
 
-    /*get db_ptr resource*/
+    /*get it_ptr resource*/
     if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
@@ -778,7 +797,7 @@ static ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 static ERL_NIF_TERM last_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::Iterator** it_ptr;
 
-    /*get db_ptr resource*/
+    /*get it_ptr resource*/
     if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
@@ -813,7 +832,7 @@ static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     leveldb::Iterator** it_ptr;
     ErlNifBinary binkey;
 
-    /*get db_ptr resource*/
+    /*get it_ptr resource*/
     if (argc != 2 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
@@ -850,7 +869,7 @@ static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 static ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::Iterator** it_ptr;
 
-    /*get db_ptr resource*/
+    /*get it_ptr resource*/
     if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
@@ -886,7 +905,7 @@ static ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 static ERL_NIF_TERM prev_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::Iterator** it_ptr;
 
-    /*get db_ptr resource*/
+    /*get it_ptr resource*/
     if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
@@ -939,6 +958,7 @@ static ErlNifFunc nif_funcs[] = {
     {"read_range_n", 4, read_range_n_nif},
 
     {"iterator", 2, iterator_nif},
+    {"delete_iterator", 1, delete_iterator_nif},
     {"first", 1, first_nif},
     {"last", 1, last_nif},
     {"seek", 2, seek_nif},

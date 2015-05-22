@@ -20,6 +20,7 @@
 	 read_range_n/4]).
 
 -export([iterator/2,
+	 delete_iterator/1,
          first/1,
          last/1,
 	 seek/2,
@@ -219,6 +220,15 @@ read_range_n(_DB, _ReadOptions, _StartKey, _N) ->
 -spec iterator(DB :: db(), ReadOptions :: readoptions()) ->
     {ok, binary()} | {error, Reason :: any()}.
 iterator(_DB, _ReadOptions) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%%--------------------------------------------------------------------
+%% @doc Delete a LevelDB Iterator.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_iterator(It :: it()) ->
+    ok | {error, Reason :: any()}.
+delete_iterator(_It) ->
     erlang:nif_error(nif_library_not_loaded).
 
 %%--------------------------------------------------------------------
