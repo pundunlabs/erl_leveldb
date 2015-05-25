@@ -21,7 +21,7 @@ edoc:
                '"."' '[{def,{vsn,"$(VSN)"}}, {source_path, ["src", "test"]}]'
 
 eunit:
-	export LD_LIBRARY_PATH=$(shell pwd)/deps/leveldb &&\
+	./ld_library_path \
 	erl -noshell -pa ebin \
 	-eval 'eunit:test("ebin",[verbose])' \
 	-s init stop
