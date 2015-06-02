@@ -638,9 +638,19 @@ static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 	    kvl_vector.push_back(enif_make_tuple2(env, key_term, value_term));
 	    i++;
 	}
+	ERL_NIF_TERM cont;
+	if ( i == max_keys && it->Valid() ){
+	    /*Construct key_term*/
+	    enif_alloc_binary(it->key().size(), &binkey);
+	    memcpy(binkey.data, it->key().data(), it->key().size());
+	    cont = enif_make_binary(env, &binkey);
+	}
+	else {
+	    cont = enif_make_atom(env, "complete");
+	}
 	delete it;
 	kvl = enif_make_list_from_array(env, &kvl_vector[0], kvl_vector.size());
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), kvl);
+	return enif_make_tuple3(env, enif_make_atom(env, "ok"), kvl, cont);
     }
 }
 
@@ -751,7 +761,7 @@ static ERL_NIF_TERM delete_iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_
     leveldb::Iterator** it_ptr;
 
     /*get it_ptr resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myDBResource, (void **) &it_ptr)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &it_ptr)) {
 	return enif_make_badarg(env);
     }
     else{
@@ -846,12 +856,15 @@ static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 	leveldb::Slice start((const char*)binkey.data, (size_t) binkey.size);
 
 	/*Declare key and value erlang resources*/
-	ErlNifBinary binvalue;
+	ErlNifBinary binkey, binvalue;
 	ERL_NIF_TERM key_term;
 	ERL_NIF_TERM value_term;
 
 	(*it_ptr)->Seek(start);
 	if( (*it_ptr)->Valid() ){
+	    /*Construct key_term*/
+	    enif_alloc_binary((*it_ptr)->key().size(), &binkey);
+	    memcpy(binkey.data, (*it_ptr)->key().data(), (*it_ptr)->key().size());
 	    key_term = enif_make_binary(env, &binkey);
 	    /*Construct value_term*/
 	    enif_alloc_binary((*it_ptr)->value().size(), &binvalue);

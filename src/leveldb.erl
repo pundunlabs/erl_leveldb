@@ -199,7 +199,8 @@ approximate_size(_DB, _ReadOptions) ->
 %%--------------------------------------------------------------------
 -spec read_range(DB :: db(), Options :: options(), ReadOptions :: readoptions(),
                  Range :: range(), Limit :: pos_integer()) ->
-    {ok, [{key(), value()}]} | {error, Reason :: any()}.
+    {ok, [{key(), value()}], Cont :: complete | key()} |
+    {error, Reason :: any()}.
 read_range(_DB, _Options, _ReadOptions, _Range, _Limit) ->
     erlang:nif_error(nif_library_not_loaded).
 

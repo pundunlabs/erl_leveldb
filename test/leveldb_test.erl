@@ -48,7 +48,7 @@
 -spec options_test() -> any().
 options_test()->
     ?assertMatch({ok, _Options}, 
-		 leveldb:options(#leveldb_options{comparator=1,
+		 leveldb:options(#leveldb_options{comparator=0,
 						  create_if_missing=true})).
 
 %%--------------------------------------------------------------------
@@ -75,7 +75,7 @@ writeoptions_test()->
 %%--------------------------------------------------------------------
 -spec open_close_db_test() -> any().
 open_close_db_test()->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
                                                      create_if_missing=true}),
     {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
     ?assertEqual(ok, close_db(DB)).
@@ -86,7 +86,7 @@ open_close_db_test()->
 %%--------------------------------------------------------------------
 -spec put_test() -> any().
 put_test()->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
 						     create_if_missing=true}),
     {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
     {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
@@ -103,7 +103,7 @@ put_test()->
 get_test()->
     ?_test(
        begin
-	   {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+	   {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
 	                                                    create_if_missing=true}),
 	   {ok, ReadOptions} = leveldb:readoptions(#leveldb_readoptions{}),
 	   {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
@@ -119,7 +119,7 @@ get_test()->
 %%--------------------------------------------------------------------
 -spec delete_test() -> any().
 delete_test()->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
                                                      create_if_missing=true}),
     {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
     {ok, DB} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
@@ -133,7 +133,7 @@ delete_test()->
 %%--------------------------------------------------------------------
 -spec put_get_delete_test() -> any().
 put_get_delete_test() ->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
                                                      create_if_missing=true}),
     {ok, ReadOptions} = leveldb:readoptions(#leveldb_readoptions{}),
     {ok, WriteOptions} = leveldb:writeoptions(#leveldb_writeoptions{}),
@@ -238,10 +238,9 @@ read_range_test() ->
 		    {[BK|DK],[{BK,BV}|PKV]}
 	    end,
     {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,100000)),
-    ok = leveldb:write(DB, WriteOptions,
-		               DeleteKeys, PutKVS),
+    ok = leveldb:write(DB, WriteOptions, DeleteKeys, PutKVS),
     Range = {erlang:term_to_binary("2500"), erlang:term_to_binary("1000")},
-    {ok, KVL} = leveldb:read_range(DB, Options, ReadOptions, Range, 1000),
+    {ok, KVL, _} = leveldb:read_range(DB, Options, ReadOptions, Range, 1000),
     1000 = length(KVL),
     ok = close_db(DB).
 
@@ -306,7 +305,7 @@ iteration_test() ->
 %%--------------------------------------------------------------------
 -spec repair_db_test() -> any().
 repair_db_test()->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
                                                      create_if_missing=true}),
     ?assertEqual(ok, leveldb:repair_db("/tmp/erl_leveldb_test", Options)).
 
@@ -316,7 +315,7 @@ repair_db_test()->
 %%--------------------------------------------------------------------
 -spec destroy_db_test() -> any().
 destroy_db_test()->
-    {ok, Options} = leveldb:options(#leveldb_options{comparator=1,
+    {ok, Options} = leveldb:options(#leveldb_options{comparator=0,
                                                      create_if_missing=true}),
     ?assertEqual(ok, leveldb:destroy_db("/tmp/erl_leveldb_test", Options)).
 
@@ -511,7 +510,7 @@ delete(DB, Key)->
 %%--------------------------------------------------------------------
 -spec options() -> {ok, binary()} | {error, Reason :: any()}.
 options()->
-    leveldb:options(#leveldb_options{comparator=1,
+    leveldb:options(#leveldb_options{comparator=0,
 				     create_if_missing=true}).
 
 %%--------------------------------------------------------------------
@@ -614,7 +613,7 @@ read_range() ->
     {DeleteKeys, PutKVS} = lists:foldr(Batch, {[],[]}, lists:seq(1,1500000)),
     ok = leveldb:write(DB, WriteOptions, DeleteKeys, PutKVS),
     Range = {erlang:term_to_binary("1000"),erlang:term_to_binary("1200000")},
-    {ok, KVL} = leveldb:read_range(DB, Options, ReadOptions, Range, Limit),
+    {ok, KVL, _} = leveldb:read_range(DB, Options, ReadOptions, Range, Limit),
 
     ok = close_db(DB),
     {ok, [{binary_to_term(K), binary_to_term(V)} || {K, V} <- KVL]}.

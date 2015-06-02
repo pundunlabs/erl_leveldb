@@ -47,7 +47,7 @@ int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Opt
 	return -1;
     }
     else {
-	if ( temp == 1 ) {
+	if ( temp == 0 ) {
 	    options->comparator = new DescendingComparator;
 	}
     }

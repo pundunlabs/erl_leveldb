@@ -9,6 +9,9 @@ class KeyValuePair : public Slice {
         /* Create an empty KeyValuePair. */
         KeyValuePair()
 	: Slice (), tag_(-1) { }
+        /* Create an KeyValuePair for comp function. */
+        KeyValuePair(bool a)
+	: Slice (), tag_(-1), ascending_(a) { }
         /* Create a KeyValuePair */
         KeyValuePair (int tag, const char* d, size_t n,
                       ErlNifBinary v)
@@ -16,6 +19,8 @@ class KeyValuePair : public Slice {
         //~ KeyValuePair ();
         /* Return the integer value of tag */
         const int tag() const { return tag_; }
+        /* Return the bool value of ascending */
+        const bool ascending() const { return ascending_; }
         /* Return a pointer to the referenced key */
         const char* key() const { return data(); }
         /* Return the length (in bytes) of the referenced key */
@@ -24,15 +29,14 @@ class KeyValuePair : public Slice {
         ErlNifBinary value() const { return value_; }
         /*Compare function to be used by STL: Algorithm */
         bool operator()(const KeyValuePair& a, const KeyValuePair& b) const {
-            if ( a.compare(b) < 0){
-                return true;
-            }
-            else {
-                return false;
-            }
+            if (ascending())
+		return a.compare(b) < 0;
+	    else
+		return a.compare(b) > 0;
         }
     private:
         unsigned short int tag_;
+	bool ascending_;
 	ErlNifBinary value_;
 };
 }
