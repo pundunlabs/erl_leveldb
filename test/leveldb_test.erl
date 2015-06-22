@@ -242,6 +242,13 @@ read_range_test() ->
     Range = {erlang:term_to_binary("2500"), erlang:term_to_binary("1000")},
     {ok, KVL, _} = leveldb:read_range(DB, Options, ReadOptions, Range, 1000),
     1000 = length(KVL),
+
+    Range2 = {erlang:term_to_binary("500"), erlang:term_to_binary("500")},
+    {ok, [_KVP], complete} = leveldb:read_range(DB, Options, ReadOptions, Range2, 1),
+    Range3 = {erlang:term_to_binary("501"), erlang:term_to_binary("500")},
+    {ok, [_], <<_/binary>>} = leveldb:read_range(DB, Options, ReadOptions, Range3, 1),
+    {ok, [_,_], complete} = leveldb:read_range(DB, Options, ReadOptions, Range3, 2),
+
     ok = close_db(DB).
 
 %%--------------------------------------------------------------------
@@ -297,7 +304,22 @@ iteration_test() ->
     ?assert(erlang:binary_to_term(S2001) =:= "2001"),
     {ok, {_, _}} = leveldb:last(It),
     {error, invalid} = leveldb:next(It),
+    ok = leveldb:delete_iterator(It),
     ok = close_db(DB).
+
+%%--------------------------------------------------------------------
+%% @doc Test creating an iterator and using first, last, seek, next and
+%% prev functions.
+%% @end
+%%--------------------------------------------------------------------
+-spec iterator_delete_test() -> any().
+iterator_delete_test() ->
+    {ok, Options} = options(),
+    {ok, DB1} = leveldb:open_db(Options, "/tmp/erl_leveldb_test"),
+    {ok, ReadOptions} = readoptions(),
+    {ok, It1} = leveldb:iterator(DB1, ReadOptions),
+    ok = leveldb:delete_iterator(It1),
+    ok = close_db(DB1).
 
 %%--------------------------------------------------------------------
 %% @doc Test repairing a leveldb database.

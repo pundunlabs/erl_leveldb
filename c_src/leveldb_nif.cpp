@@ -639,7 +639,8 @@ static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 	    i++;
 	}
 	ERL_NIF_TERM cont;
-	if ( i == max_keys && it->Valid() ){
+
+	if ( i == max_keys && it->Valid() && options->comparator->Compare( it->key(), limit ) <= 0 ){
 	    /*Construct key_term*/
 	    enif_alloc_binary(it->key().size(), &binkey);
 	    memcpy(binkey.data, it->key().data(), it->key().size());
