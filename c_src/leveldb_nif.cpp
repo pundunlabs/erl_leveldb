@@ -1053,4 +1053,4 @@ static ErlNifFunc nif_funcs[] = {
 
 };
 
-ERL_NIF_INIT(leveldb, nif_funcs, &load, &reload, &upgrade, NULL)
+ERL_NIF_INIT(leveldb, nif_funcs, load, reload, upgrade, NULL)

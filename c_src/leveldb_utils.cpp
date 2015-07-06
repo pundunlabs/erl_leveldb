@@ -12,15 +12,15 @@
 using namespace std;
 using namespace leveldb;
 
-static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
+static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
     return 0;
 }
 
-static int reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
+static int reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
     return 0;
 }
 
-static int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data, ERL_NIF_TERM load_info){
+static int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data, ERL_NIF_TERM load_info) {
     return 0;
 }
 
@@ -201,5 +201,5 @@ static ErlNifFunc nif_funcs[] = {
     {"sort_kvl", 2, sort_kvl_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
-ERL_NIF_INIT(leveldb_utils, nif_funcs, &load, &reload, &upgrade, NULL)
+ERL_NIF_INIT(leveldb_utils, nif_funcs, load, reload, upgrade, NULL)
 
