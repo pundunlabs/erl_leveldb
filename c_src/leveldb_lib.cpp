@@ -6,6 +6,8 @@
 using namespace std;
 using namespace leveldb;
 
+static DescendingComparator descendingcomparator;
+
 static int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
 {
     char buf[6];
@@ -22,11 +24,11 @@ static int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
 	return -1;
 }
 
-int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options* options) {
+int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options **_options) {
     int temp = -1;
-    
-    new(options) leveldb::Options;
-    
+    leveldb::Options *options = new leveldb::Options();
+    *_options = options;
+
     /* 0. leveldb_options,
     // 1. comparator,
     // 2. create_if_missing,
@@ -46,10 +48,9 @@ int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Opt
     if (!enif_get_int(env, options_array[1], &temp)){
 	return -1;
     }
-    else {
-	if ( temp == 0 ) {
-	    options->comparator = new DescendingComparator;
-	}
+
+    if ( temp == 0 ) {
+	options->comparator = &descendingcomparator;
     }
      
     //Set create_if_missing
@@ -57,62 +58,47 @@ int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Opt
     if (temp == -1) {
 	return -1;
     }
-    else{
-	options->create_if_missing = temp;
-    }
+    options->create_if_missing = temp;
     
     //Set error_if_exists
     temp = get_bool(env, options_array[3]);
     if (temp == -1) {
 	return -1;
     }
-    else{
-	options->error_if_exists = temp;
-    }
+    options->error_if_exists = temp;
 
     //Set write_buffer_size
     if (!enif_get_int(env, options_array[7], &temp)){
 	return -1;
     }
-    else
-    {
-	options->write_buffer_size = temp * 1048576; /*(1024 * 1024)(MB)*/
-    }
+    options->write_buffer_size = temp * 1048576; /*(1024 * 1024)(MB)*/
     
     //Set max_open_files
     if (!enif_get_int(env, options_array[8], &temp)){
 	return -1;
     }
-    else
-    {
-	options->max_open_files = temp;
-    }
+    options->max_open_files = temp;
 
     //Set block_size
     if (!enif_get_int(env, options_array[10], &temp)){
 	return -1;
     }
-    else
-    {
-	options->block_size = temp * 1024; /*(KB)*/
-    }
+    options->block_size = temp * 1024; /*(KB)*/
     
     //Set block_restart_interval
     if (!enif_get_int(env, options_array[11], &temp)){
 	return -1;
     }
-    else
-    {
-	options->block_restart_interval = temp;
-    }
+    options->block_restart_interval = temp;
+
     return 0;
 }
 
-int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leveldb::ReadOptions* readoptions) {
+int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leveldb::ReadOptions **_readoptions) {
     int temp;
-    
-    new(readoptions) leveldb::ReadOptions;
-    
+    leveldb::ReadOptions *readoptions = new leveldb::ReadOptions();
+    *_readoptions = readoptions;
+
     /* 0. leveldb_options,
     // 1. verify_checksums,
     // 2. fill_cache,
@@ -138,10 +124,10 @@ int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leve
     return 0;
 }
 
-int init_writeoptions(ErlNifEnv* env, const ERL_NIF_TERM* writeoptions_array, leveldb::WriteOptions* writeoptions) {
+int init_writeoptions(ErlNifEnv* env, const ERL_NIF_TERM* writeoptions_array, leveldb::WriteOptions **_writeoptions) {
     int temp;
-    
-    new(writeoptions) leveldb::WriteOptions;
+    leveldb::WriteOptions *writeoptions = new leveldb::WriteOptions();
+    *_writeoptions = writeoptions;
     
     /* 0. leveldb_writeoptions
     // 1. sync*/
@@ -167,8 +153,8 @@ leveldb::DB* open_db(leveldb::Options* options, char* path, leveldb::Status* sta
     return db;
 }
 
-void close_db(leveldb::DB** db){
-    delete *db;
+void close_db(leveldb::DB* db){
+    delete db;
 }
 
 extern ERL_NIF_TERM make_status_tuple(ErlNifEnv* env, leveldb::Status status){
