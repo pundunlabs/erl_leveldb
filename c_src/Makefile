@@ -7,7 +7,8 @@ CPP_FILES = \
    leveldb_lib.cpp
 
 HEADER_FILES = \
-    leveldb_nif.h
+    leveldb_nif.h \
+    descendingcomparator.h \
 
 UTILS_HEADERS = \
     keyvaluepair.h \

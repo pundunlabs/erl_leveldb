@@ -12,13 +12,13 @@
 
 extern leveldb::DB* open_db(leveldb::Options* options, char* path, leveldb::Status* status);
 
-extern void close_db(leveldb::DB** db);
+extern void close_db(leveldb::DB* db);
 
-extern int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options* options);
+extern int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options **options);
 
-extern int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leveldb::ReadOptions* readoptions);
+extern int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leveldb::ReadOptions **readoptions);
 
-extern int init_writeoptions(ErlNifEnv* env, const ERL_NIF_TERM* writeoptions_array, leveldb::WriteOptions* writeoptions);
+extern int init_writeoptions(ErlNifEnv* env, const ERL_NIF_TERM* writeoptions_array, leveldb::WriteOptions **writeoptions);
 
 extern void init_db(leveldb::DB* db);
 
