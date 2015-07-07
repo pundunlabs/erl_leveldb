@@ -6,27 +6,26 @@
 using namespace std;
 using namespace leveldb;
 
-static DescendingComparator descendingcomparator;
+namespace {
+  DescendingComparator descendingcomparator;
 
-static int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
-{
-    char buf[6];
+  int get_bool(ErlNifEnv* env, ERL_NIF_TERM term)
+  {
+      char buf[6];
 
-    if(enif_get_atom(env, term, buf, sizeof(buf), ERL_NIF_LATIN1)){
-	if (strcmp("false", buf) == 0)
-	    return 0;
-	else if (strcmp("true", buf) == 0)
-	    return 1;
-	else
-	    return -1;
-    }
-    else
-	return -1;
+      if(enif_get_atom(env, term, buf, sizeof(buf), ERL_NIF_LATIN1)){
+	  if (strcmp("false", buf) == 0)
+	      return 0;
+	  if (strcmp("true", buf) == 0)
+	      return 1;
+      }
+      return -1;
+  }
 }
 
 int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options **_options) {
     int temp = -1;
-    leveldb::Options *options = new leveldb::Options();
+    leveldb::Options *options = new leveldb::Options;
     *_options = options;
 
     /* 0. leveldb_options,
@@ -96,7 +95,7 @@ int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Opt
 
 int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leveldb::ReadOptions **_readoptions) {
     int temp;
-    leveldb::ReadOptions *readoptions = new leveldb::ReadOptions();
+    leveldb::ReadOptions *readoptions = new leveldb::ReadOptions;
     *_readoptions = readoptions;
 
     /* 0. leveldb_options,
@@ -126,7 +125,7 @@ int init_readoptions(ErlNifEnv* env, const ERL_NIF_TERM* readoptions_array, leve
 
 int init_writeoptions(ErlNifEnv* env, const ERL_NIF_TERM* writeoptions_array, leveldb::WriteOptions **_writeoptions) {
     int temp;
-    leveldb::WriteOptions *writeoptions = new leveldb::WriteOptions();
+    leveldb::WriteOptions *writeoptions = new leveldb::WriteOptions;
     *_writeoptions = writeoptions;
     
     /* 0. leveldb_writeoptions

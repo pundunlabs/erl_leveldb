@@ -7,109 +7,121 @@
 
 using namespace std;
 
-typedef struct _my_resource {
+namespace { /* anonymous namespace starts */
+
+typedef struct _obj_resource {
   char allocated;
   void *object;
-} my_resource;
+} object_resource;
 
-static ErlNifResourceFlags resource_flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
+ErlNifResourceFlags resource_flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
 
-static ErlNifResourceType* myOptionsResource;
-static ErlNifResourceType* myReadOptionsResource;
-static ErlNifResourceType* myWriteOptionsResource;
-static ErlNifResourceType* myDBResource;
-static ErlNifResourceType* myIteratorResource;
+ErlNifResourceType* optionResource;
+ErlNifResourceType* readoptionResource;
+ErlNifResourceType* writeoptionResource;
+ErlNifResourceType* dbResource;
+ErlNifResourceType* iteratorResource;
 
-static void my_db_destructor(ErlNifEnv* env, void *db);
-static void my_options_destructor(ErlNifEnv* env, void *options);
-static void my_read_options_destructor(ErlNifEnv* env, void *ropts);
-static void my_write_options_destructor(ErlNifEnv* env, void *wopts);
-static void my_iterator_destructor(ErlNifEnv* env, void *it);
 
-static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
-    myDBResource = enif_open_resource_type(env,
+/* atoms */
+ERL_NIF_TERM atom_ok;
+ERL_NIF_TERM atom_error;
+ERL_NIF_TERM atom_invalid;
+
+
+void db_destructor(ErlNifEnv* env, void *db);
+void option_destructor(ErlNifEnv* env, void *options);
+void readoption_destructor(ErlNifEnv* env, void *ropts);
+void writeoption_destructor(ErlNifEnv* env, void *wopts);
+void iterator_destructor(ErlNifEnv* env, void *it);
+
+int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
+    dbResource = enif_open_resource_type(env,
 	    "leveldb_nif",
 	    "mydb_resource",
-	    my_db_destructor,
+	    db_destructor,
 	    resource_flags,
 	    NULL);
 
-    myOptionsResource = enif_open_resource_type(env,
+    optionResource = enif_open_resource_type(env,
 	    "leveldb_nif", 
 	    "options_resource",
-	    my_options_destructor,
+	    option_destructor,
 	    resource_flags,
 	    0);
 
-    myReadOptionsResource = enif_open_resource_type(env,
+    readoptionResource = enif_open_resource_type(env,
 	    "leveldb_nif",
 	    "read_options_resource",
-	    my_read_options_destructor,
+	    readoption_destructor,
 	    resource_flags,
 	    0);
 
-    myWriteOptionsResource = enif_open_resource_type(env,
+    writeoptionResource = enif_open_resource_type(env,
 	    "leveldb_nif",
 	    "write_options_resource",
-	    my_write_options_destructor,
+	    writeoption_destructor,
 	    resource_flags,
 	    0);
 
-    myIteratorResource = enif_open_resource_type(env,
+    iteratorResource = enif_open_resource_type(env,
 	    "leveldb_nif",
 	    "iterator_resource",
-	    my_iterator_destructor,
+	    iterator_destructor,
 	    resource_flags,
 	    0);
 
+    atom_ok	 = enif_make_atom(env, "ok");
+    atom_error	 = enif_make_atom(env, "error");
+    atom_invalid = enif_make_atom(env, "invalid");
+
     return 0;
 }
 
-static int reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
+int reload(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
     return 0;
 }
 
-static int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data,ERL_NIF_TERM load_info){
+int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data,ERL_NIF_TERM load_info){
     return 0;
 }
 
-static void my_iterator_destructor(ErlNifEnv* env, void* _it) {
-    my_resource *it = (my_resource*) _it;
+void iterator_destructor(ErlNifEnv* env, void* _it) {
+    object_resource *it = (object_resource*) _it;
     if (it->allocated)
 	delete (leveldb::Iterator*) it->object;
 }
-
-static void my_db_destructor(ErlNifEnv* env, void* _db) {
-    my_resource *db = (my_resource*) _db;
+void db_destructor(ErlNifEnv* env, void* _db) {
+    object_resource *db = (object_resource*) _db;
     if(db->allocated)
 	delete (leveldb::DB*) db->object;
 }
-static void my_options_destructor(ErlNifEnv* env, void* _options) {
-    my_resource *options = (my_resource*) _options;
+void option_destructor(ErlNifEnv* env, void* _options) {
+    object_resource *options = (object_resource*) _options;
     if (options->allocated)
 	delete (leveldb::Options*) options->object;
 }
-static void my_read_options_destructor(ErlNifEnv* env, void* _ropts) {
-    my_resource *ropts = (my_resource*) _ropts;
+void readoption_destructor(ErlNifEnv* env, void* _ropts) {
+    object_resource *ropts = (object_resource*) _ropts;
     if (ropts->allocated)
 	delete (leveldb::ReadOptions*) ropts->object;
 }
-static void my_write_options_destructor(ErlNifEnv* env, void* _wopts) {
-    my_resource *wopts = (my_resource*) _wopts;
+void writeoption_destructor(ErlNifEnv* env, void* _wopts) {
+    object_resource *wopts = (object_resource*) _wopts;
     if (wopts->allocated)
 	delete (leveldb::WriteOptions*) wopts->object;
 }
 
 /*Test NIFs for experimenting*/
-static ERL_NIF_TERM resource_test_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM resource_test_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ERL_NIF_TERM term;
     /* ERL_NIF_TERM status_term; */
-    /*return  enif_make_atom(env, "ok");*/
-    if(!myDBResource){
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "resource_type"));
+    /*return  atom_ok;*/
+    if(!dbResource){
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "resource_type"));
     }
 
-    void* db_ptr = enif_alloc_resource(myDBResource, 1024);
+    void* db_ptr = enif_alloc_resource(dbResource, 1024);
 
     // //leveldb::DB* db;
     // leveldb::Options options; 
@@ -122,18 +134,18 @@ static ERL_NIF_TERM resource_test_nif(ErlNifEnv* env, int argc, const ERL_NIF_TE
 }
 
 /*leveldb operations*/
-static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char path[MAXPATHLEN];
     leveldb::Options* options;
-    my_resource* opts;
+    object_resource* opts;
 
     /*get options resource*/
-    if (argc != 2 || !enif_get_resource(env, argv[0], myOptionsResource, (void **)&opts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+    if (argc != 2 || !enif_get_resource(env, argv[0], optionResource, (void **)&opts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "options"));
     }
     /*get path*/
     else if(enif_get_string(env, argv[1], path, sizeof(path), ERL_NIF_LATIN1) <1){
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "path"));
     }
     else{
 	options = (leveldb::Options*) opts->object;
@@ -141,7 +153,7 @@ static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 	ERL_NIF_TERM db_term;
 	/* ERL_NIF_TERM status_term; */
 
-	my_resource* db = (my_resource *) enif_alloc_resource(myDBResource, sizeof(my_resource));
+	object_resource* db = (object_resource *) enif_alloc_resource(dbResource, sizeof(object_resource));
 
 	leveldb::Status status;
 	db->object = open_db(options, path, &status);
@@ -150,7 +162,7 @@ static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 	    db_term = enif_make_resource(env, db);
 	    enif_release_resource(db);
 	    /* resource now only owned by "Erlang" */
-	    return enif_make_tuple2(env, enif_make_atom(env, "ok"), db_term);
+	    return enif_make_tuple2(env, atom_ok, db_term);
 	}
 	else{
 	    ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
@@ -159,23 +171,23 @@ static ERL_NIF_TERM open_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     }
 }
 
-static ERL_NIF_TERM close_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource* db;
+ERL_NIF_TERM close_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource* db;
 
     /*get db_ptr resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myDBResource, (void **) &db)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], dbResource, (void **) &db)) {
 	return enif_make_badarg(env);
     }
     else{
 	close_db((leveldb::DB*) db->object);
 	db->allocated=0;
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
 }
 
-static ERL_NIF_TERM get_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *re_db;
-    my_resource *re_ropts;
+ERL_NIF_TERM get_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *re_db;
+    object_resource *re_ropts;
     leveldb::DB* db;
     leveldb::ReadOptions* readoptions;
     ErlNifBinary binkey;
@@ -184,20 +196,20 @@ static ERL_NIF_TERM get_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     ERL_NIF_TERM value_term;
 
     /* get db_ptr resource */
-    if (argc != 3 || !enif_get_resource(env, argv[0], myDBResource, (void **) &re_db)) {
+    if (argc != 3 || !enif_get_resource(env, argv[0], dbResource, (void **) &re_db)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) re_db->object;
 
     /* get readoptions resource */
-    if (!enif_get_resource(env, argv[1], myReadOptionsResource, (void **) &re_ropts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "readoptions"));
+    if (!enif_get_resource(env, argv[1], readoptionResource, (void **) &re_ropts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "readoptions"));
     }
     readoptions = (leveldb::ReadOptions*) re_ropts->object;
 
     /* get key resource */
     if (!enif_inspect_binary(env, argv[2], &binkey)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "key"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "key"));
     }
 
     leveldb::Slice key((const char*)binkey.data, (size_t) binkey.size);
@@ -208,7 +220,7 @@ static ERL_NIF_TERM get_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 	memcpy(binvalue.data, value.data(), value.length());
 	value_term = enif_make_binary(env, &binvalue);
 	/* not calling enif_release_binary since enif_make_binary transferrs ownership */
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), value_term);
+	return enif_make_tuple2(env, atom_ok, value_term);
     }
     else {
 	ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
@@ -216,34 +228,34 @@ static ERL_NIF_TERM get_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     }
 }
 
-static ERL_NIF_TERM put_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *re_db;
-    my_resource *re_wopts;
+ERL_NIF_TERM put_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *re_db;
+    object_resource *re_wopts;
     leveldb::DB *db;
     leveldb::WriteOptions* writeoptions;
     ErlNifBinary binkey;
     ErlNifBinary binvalue;
 
     /* get db_ptr resource */
-    if (argc != 4 || !enif_get_resource(env, argv[0], myDBResource, (void **) &re_db)) {
+    if (argc != 4 || !enif_get_resource(env, argv[0], dbResource, (void **) &re_db)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) re_db->object;
 
     /* get writeoptions resource */
-    if (!enif_get_resource(env, argv[1], myWriteOptionsResource, (void **) &re_wopts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "writeoptions"));
+    if (!enif_get_resource(env, argv[1], writeoptionResource, (void **) &re_wopts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "writeoptions"));
     }
     writeoptions = (leveldb::WriteOptions*) re_wopts->object;
 
     /* get key resource */
     if (!enif_inspect_binary(env, argv[2], &binkey)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "key"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "key"));
     }
 
     /*get value resource*/
     if (!enif_inspect_binary(env, argv[3], &binvalue)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "value"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "value"));
     }
 
     leveldb::Slice key((const char*)binkey.data, (size_t) binkey.size);
@@ -252,7 +264,7 @@ static ERL_NIF_TERM put_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     leveldb::Status status = db->Put(*writeoptions, key, value);
 
     if (status.ok()) {
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
     else {
 	ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
@@ -260,35 +272,35 @@ static ERL_NIF_TERM put_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     }
 }
 
-static ERL_NIF_TERM delete_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *re_db;
-    my_resource *re_wopts;
+ERL_NIF_TERM delete_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *re_db;
+    object_resource *re_wopts;
     leveldb::DB* db;
     leveldb::WriteOptions* writeoptions;
     ErlNifBinary binkey;
 
     /* get db_ptr resource */
-    if (argc != 3 || !enif_get_resource(env, argv[0], myDBResource, (void **) &re_db)) {
+    if (argc != 3 || !enif_get_resource(env, argv[0], dbResource, (void **) &re_db)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) re_db->object;
 
     /* get writeoptions resource */
-    if (!enif_get_resource(env, argv[1], myWriteOptionsResource, (void **) &re_wopts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "writeoptions"));
+    if (!enif_get_resource(env, argv[1], writeoptionResource, (void **) &re_wopts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "writeoptions"));
     }
     writeoptions = (leveldb::WriteOptions*) re_wopts->object;
 
     /* get key resource */
     if (!enif_inspect_binary(env, argv[2], &binkey)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "key"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "key"));
     }
 
     leveldb::Slice key((const char*)binkey.data, (size_t) binkey.size);
     leveldb::Status status = db->Delete(*writeoptions, key);
 
     if (status.ok()) {
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
     else {
 	ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
@@ -296,9 +308,9 @@ static ERL_NIF_TERM delete_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     }
 }
 
-static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *re_db;
-    my_resource *re_wopts;
+ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *re_db;
+    object_resource *re_wopts;
     leveldb::DB *db;
     leveldb::WriteOptions *writeoptions;
     unsigned int delete_keys_size;
@@ -310,25 +322,25 @@ static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     ERL_NIF_TERM put_list = argv[3];
 
     /*get db_ptr resource*/
-    if (argc != 4 || !enif_get_resource(env, argv[0], myDBResource, (void **) &re_db)) {
+    if (argc != 4 || !enif_get_resource(env, argv[0], dbResource, (void **) &re_db)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) re_db->object;
 
     /* get writeoptions resource */
-    if (!enif_get_resource(env, argv[1], myWriteOptionsResource, (void **) &re_wopts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "writeoptions"));
+    if (!enif_get_resource(env, argv[1], writeoptionResource, (void **) &re_wopts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "writeoptions"));
     }
     writeoptions = (leveldb::WriteOptions*) re_wopts->object;
 
     /* get delete keys resource */
     if (!enif_get_list_length(env, delete_list, &delete_keys_size)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "delete_ks"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "delete_ks"));
     }
 
     /* get put key/values resource */
     if (!enif_get_list_length(env, put_list, &put_kvs_size)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "put_kvs"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "put_kvs"));
     }
 
     vector<leveldb::Slice> delete_keys;
@@ -380,30 +392,28 @@ static ERL_NIF_TERM write_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     leveldb::Status status = db->Write(*writeoptions, &batch);
 
     if(status.ok()){
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
     else{
 	ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
 	return status_tuple;
     }
-
 }
 
 /*Resource making*/
-static ERL_NIF_TERM options_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
+ERL_NIF_TERM options_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ERL_NIF_TERM term;
     int arity;
     const ERL_NIF_TERM* options_array;
     int result;
     leveldb::Options *options = NULL;
-    my_resource *opts;
+    object_resource *opts;
 
     if (argc != 1 || !enif_get_tuple(env, argv[0], &arity, &options_array)) {
 	return enif_make_badarg(env);
     }
 
-    opts =  (my_resource*) enif_alloc_resource(myOptionsResource, sizeof(my_resource));
+    opts =  (object_resource*) enif_alloc_resource(optionResource, sizeof(object_resource));
     result = init_options(env, options_array, &options);
     opts->allocated = 1;
     opts->object = options;
@@ -412,24 +422,24 @@ static ERL_NIF_TERM options_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     if (result == 0) {
 	term = enif_make_resource(env, opts);
 	enif_release_resource(opts);
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	return enif_make_tuple2(env, atom_ok, term);
     }
 
     return enif_make_badarg(env);
 }
 
-static ERL_NIF_TERM readoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM readoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ERL_NIF_TERM term;
     int arity;
     const ERL_NIF_TERM* readoptions_array;
     int result;
     leveldb::ReadOptions *readoptions = NULL;
-    my_resource *ropts;
+    object_resource *ropts;
 
     if (argc != 1 || !enif_get_tuple(env, argv[0], &arity, &readoptions_array))
 	return enif_make_badarg(env);
 
-    ropts = (my_resource*) enif_alloc_resource(myReadOptionsResource, sizeof(my_resource));
+    ropts = (object_resource*) enif_alloc_resource(readoptionResource, sizeof(object_resource));
 
     result = init_readoptions(env, readoptions_array, &readoptions);
     ropts->allocated = 1;
@@ -439,25 +449,25 @@ static ERL_NIF_TERM readoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     if (result == 0) {
 	term = enif_make_resource(env, ropts);
 	enif_release_resource(ropts);
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	return enif_make_tuple2(env, atom_ok, term);
     }
 
     return enif_make_badarg(env);
 }
 
-static ERL_NIF_TERM writeoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM writeoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ERL_NIF_TERM term;
     int arity;
     const ERL_NIF_TERM* writeoptions_array;
     int result;
-    my_resource *wopts;
+    object_resource *wopts;
     leveldb::WriteOptions *writeoptions = NULL;
 
     if (argc != 1 || !enif_get_tuple(env, argv[0], &arity, &writeoptions_array)) {
 	return enif_make_badarg(env);
     }
 
-    wopts = (my_resource*) enif_alloc_resource(myWriteOptionsResource, sizeof(my_resource));
+    wopts = (object_resource*) enif_alloc_resource(writeoptionResource, sizeof(object_resource));
 
     result = init_writeoptions(env, writeoptions_array, &writeoptions);
     wopts->allocated = 1;
@@ -467,31 +477,31 @@ static ERL_NIF_TERM writeoptions_nif(ErlNifEnv* env, int argc, const ERL_NIF_TER
     if (result == 0) {
 	term = enif_make_resource(env, wopts);
 	enif_release_resource(wopts);
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+	return enif_make_tuple2(env, atom_ok, term);
     }
 
     return enif_make_badarg(env);
 }
 
 /*leveldb destroy*/
-static ERL_NIF_TERM destroy_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM destroy_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char path[MAXPATHLEN];
-    my_resource *opts;
+    object_resource *opts;
     leveldb::Options *options;
 
     /* get path */
     if (argc != 2 || enif_get_string(env, argv[0], path, sizeof(path), ERL_NIF_LATIN1) < 1) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "path"));
     }
     /* get options resource */
-    if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &opts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+    if (!enif_get_resource(env, argv[1], optionResource, (void **) &opts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "options"));
     }
     options = (leveldb::Options*) opts->object;
     leveldb::Status status = leveldb::DestroyDB(path, *options);
 
     if (status.ok()) {
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
 
     ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
@@ -499,33 +509,33 @@ static ERL_NIF_TERM destroy_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 }
 
 /*leveldb repair*/
-static ERL_NIF_TERM repair_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM repair_db_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     char path[MAXPATHLEN];
     leveldb::Options* options;
-    my_resource *opts;
+    object_resource *opts;
 
     /* get path */
     if(argc != 2 || enif_get_string(env, argv[0], path, sizeof(path), ERL_NIF_LATIN1) <1){
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "path"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "path"));
     }
 
     /* get options resource */
-    if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &opts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+    if (!enif_get_resource(env, argv[1], optionResource, (void **) &opts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "options"));
     }
     options = (leveldb::Options*) opts->object;
     leveldb::Status status = RepairDB(path, *options);
 
     if (status.ok())
-	return enif_make_atom(env, "ok");
+	return atom_ok;
 
     ERL_NIF_TERM status_tuple = make_status_tuple(env, status);
     return status_tuple;
 }
 
-static ERL_NIF_TERM approximate_sizes_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM approximate_sizes_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::DB *db;
-    my_resource *rdb;
+    object_resource *rdb;
     unsigned int ranges_size;
 
     ERL_NIF_TERM head, tail;
@@ -534,14 +544,14 @@ static ERL_NIF_TERM approximate_sizes_nif(ErlNifEnv* env, int argc, const ERL_NI
     ERL_NIF_TERM range_list = argv[1];
 
     /*get db_ptr resource*/
-    if (argc != 2 || !enif_get_resource(env, argv[0], myDBResource, (void **) &rdb)) {
+    if (argc != 2 || !enif_get_resource(env, argv[0], dbResource, (void **) &rdb)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) rdb->object;
 
     /*get ranges resource*/
     if (!enif_get_list_length(env, range_list, &ranges_size)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "ranges"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "ranges"));
     }
     vector <leveldb::Range>  ranges;
     ranges.reserve( ranges_size );
@@ -574,24 +584,24 @@ static ERL_NIF_TERM approximate_sizes_nif(ErlNifEnv* env, int argc, const ERL_NI
 	size_list = enif_make_list_cell(env, enif_make_uint64(env, sizes[ranges_size]), size_list);
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "ok"), size_list);
+    return enif_make_tuple2(env, atom_ok, size_list);
 }
 
-static ERL_NIF_TERM approximate_size_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM approximate_size_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::DB* db;
     leveldb::ReadOptions* readoptions;
-    my_resource *rdb;
-    my_resource *ropts;
+    object_resource *rdb;
+    object_resource *ropts;
 
     /*get db_ptr resource*/
-    if (argc != 2 || !enif_get_resource(env, argv[0], myDBResource, (void **) &rdb)) {
+    if (argc != 2 || !enif_get_resource(env, argv[0], dbResource, (void **) &rdb)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) rdb->object;
 
     /*get readoptions resource*/
-    if (!enif_get_resource(env, argv[1], myReadOptionsResource, (void **) &ropts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "readoptions"));
+    if (!enif_get_resource(env, argv[1], readoptionResource, (void **) &ropts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "readoptions"));
     }
     readoptions = (leveldb::ReadOptions*) ropts->object;
 
@@ -608,22 +618,22 @@ static ERL_NIF_TERM approximate_size_nif(ErlNifEnv* env, int argc, const ERL_NIF
 	db->GetApproximateSizes(ranges, 1, size);
 
 	delete it;
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"),
+	return enif_make_tuple2(env, atom_ok,
 				enif_make_uint64(env, size[0]));
     }
 
     delete it;
-    return enif_make_tuple2(env, enif_make_atom(env, "ok"),
-				enif_make_uint64(env, 0));
+    return enif_make_tuple2(env, atom_ok,
+			    enif_make_uint64(env, 0));
 }
 
-static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::DB *db;
     leveldb::Options *options;
     leveldb::ReadOptions *readoptions;
-    my_resource *rdb;
-    my_resource *opts;
-    my_resource *ropts;
+    object_resource *rdb;
+    object_resource *opts;
+    object_resource *ropts;
     int arity;
     const ERL_NIF_TERM* range_array;
     ErlNifBinary bin;
@@ -631,31 +641,31 @@ static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     int max_keys;
 
     /*get db_ptr resource*/
-    if (argc != 5 || !enif_get_resource(env, argv[0], myDBResource, (void **) &rdb)) {
+    if (argc != 5 || !enif_get_resource(env, argv[0], dbResource, (void **) &rdb)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) rdb->object;
 
     /*get options resource*/
-    if (!enif_get_resource(env, argv[1], myOptionsResource, (void **) &opts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "options"));
+    if (!enif_get_resource(env, argv[1], optionResource, (void **) &opts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "options"));
     }
     options = (leveldb::Options*) opts->object;
 
     /*get readoptions resource*/
-    if (!enif_get_resource(env, argv[2], myReadOptionsResource, (void **) &ropts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "readoptions"));
+    if (!enif_get_resource(env, argv[2], readoptionResource, (void **) &ropts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "readoptions"));
     }
     readoptions = (leveldb::ReadOptions*) ropts->object;
 
     /*get range tuple*/
     if (!enif_get_tuple(env, argv[3], &arity, &range_array)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "range"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "range"));
     }
 
     /*get limit integer*/
     if (!enif_get_int(env, argv[4], &max_keys)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "limit"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "limit"));
     }
 
     /*Read range tuple into start and limit slices*/
@@ -718,39 +728,39 @@ static ERL_NIF_TERM read_range_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
     delete it;
     kvl = enif_make_list_from_array(env, &kvl_vector[0], kvl_vector.size());
-    return enif_make_tuple3(env, enif_make_atom(env, "ok"), kvl, cont);
+    return enif_make_tuple3(env, atom_ok, kvl, cont);
 }
 
-static ERL_NIF_TERM read_range_n_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM read_range_n_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::DB *db;
     leveldb::ReadOptions *readoptions;
-    my_resource *rdb;
-    my_resource *ropts;
+    object_resource *rdb;
+    object_resource *ropts;
 
     ErlNifBinary binkey;
 
     int max_keys;
 
     /*get db_ptr resource*/
-    if (argc != 4 || !enif_get_resource(env, argv[0], myDBResource, (void **) &rdb)) {
+    if (argc != 4 || !enif_get_resource(env, argv[0], dbResource, (void **) &rdb)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) rdb->object;
 
     /*get readoptions resource*/
-    if (!enif_get_resource(env, argv[1], myReadOptionsResource, (void **) &ropts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "readoptions"));
+    if (!enif_get_resource(env, argv[1], readoptionResource, (void **) &ropts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "readoptions"));
     }
     readoptions = (leveldb::ReadOptions*) ropts->object;
 
     /*get range start key*/
     if (!enif_inspect_binary(env, argv[2], &binkey)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "start_key"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "start_key"));
     }
 
     /*get limit integer*/
     if (!enif_get_int(env, argv[3], &max_keys)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "limit"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "limit"));
     }
 
     leveldb::Slice start((const char*)binkey.data, (size_t) binkey.size);
@@ -790,32 +800,32 @@ static ERL_NIF_TERM read_range_n_nif(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     delete it;
     kvl = enif_make_list_from_array(env, &kvl_vector[0], kvl_vector.size());
-    return enif_make_tuple2(env, enif_make_atom(env, "ok"), kvl);
+    return enif_make_tuple2(env, atom_ok, kvl);
 }
 
-static ERL_NIF_TERM iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     leveldb::DB *db;
     leveldb::ReadOptions *readoptions;
     leveldb::Iterator *it;
-    my_resource *rdb;
-    my_resource *ropts;
-    my_resource *rit;
+    object_resource *rdb;
+    object_resource *ropts;
+    object_resource *rit;
     ERL_NIF_TERM it_term;
 
     /*get db_ptr resource*/
-    if (argc != 2 || !enif_get_resource(env, argv[0], myDBResource, (void **) &rdb)) {
+    if (argc != 2 || !enif_get_resource(env, argv[0], dbResource, (void **) &rdb)) {
 	return enif_make_badarg(env);
     }
     db = (leveldb::DB*) rdb->object;
 
     /* get readoptions resource */
-    if (!enif_get_resource(env, argv[1], myReadOptionsResource, (void **) &ropts)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "readoptions"));
+    if (!enif_get_resource(env, argv[1], readoptionResource, (void **) &ropts)) {
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "readoptions"));
     }
     readoptions = (leveldb::ReadOptions*) ropts->object;
 
     /*Create leveldb iterator*/
-    rit = (my_resource*)  enif_alloc_resource(myIteratorResource, sizeof(my_resource));
+    rit = (object_resource*)  enif_alloc_resource(iteratorResource, sizeof(object_resource));
 
     it = db->NewIterator(*readoptions);
     rit->allocated = 1;
@@ -826,30 +836,30 @@ static ERL_NIF_TERM iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
     if(it->status().ok()){
 	/* resource now only owned by "Erlang" */
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), it_term);
+	return enif_make_tuple2(env, atom_ok, it_term);
     }
 
     ERL_NIF_TERM status_tuple = make_status_tuple(env, it->status());
     return status_tuple;
 }
 
-static ERL_NIF_TERM delete_iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM delete_iterator_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator *it;
     /*get it_ptr resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &rit)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], iteratorResource, (void **) &rit)) {
 	return enif_make_badarg(env);
     }
     else{
 	it = (leveldb::Iterator*) rit->object;
 	delete it;
 	rit->allocated = 0;
-	return enif_make_atom(env, "ok");
+	return atom_ok;
     }
 }
 
-static ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator *it;
     /* Declare key and value erlang resources */
     ErlNifBinary binkey;
@@ -858,7 +868,7 @@ static ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     ERL_NIF_TERM value_term;
 
     /*get it_ptr resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **)&rit)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], iteratorResource, (void **)&rit)) {
 	return enif_make_badarg(env);
     }
     it = (leveldb::Iterator*) rit->object;
@@ -875,14 +885,14 @@ static ERL_NIF_TERM first_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 	memcpy(binvalue.data, it->value().data(), it->value().size());
 	value_term = enif_make_binary(env, &binvalue);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_tuple2(env, key_term, value_term));
+	return enif_make_tuple2(env, atom_ok, enif_make_tuple2(env, key_term, value_term));
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "invalid"));
+    return enif_make_tuple2(env, atom_error, enif_make_atom(env, "invalid"));
 }
 
-static ERL_NIF_TERM last_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM last_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator* it;
     /* Declare key and value erlang resources */
     ErlNifBinary binkey;
@@ -891,7 +901,7 @@ static ERL_NIF_TERM last_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     ERL_NIF_TERM value_term;
 
     /* get it_ptr resource */
-    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &rit)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], iteratorResource, (void **) &rit)) {
 	return enif_make_badarg(env);
     }
 
@@ -908,14 +918,14 @@ static ERL_NIF_TERM last_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 	memcpy(binvalue.data, it->value().data(), it->value().size());
 	value_term = enif_make_binary(env, &binvalue);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_tuple2(env, key_term, value_term));
+	return enif_make_tuple2(env, atom_ok, enif_make_tuple2(env, key_term, value_term));
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "invalid"));
+    return enif_make_tuple2(env, atom_error, enif_make_atom(env, "invalid"));
 }
 
-static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator* it;
 
     /* Declare key and value erlang resources */
@@ -925,14 +935,14 @@ static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 
 
     /* get it_ptr resource */
-    if (argc != 2 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &rit)) {
+    if (argc != 2 || !enif_get_resource(env, argv[0], iteratorResource, (void **) &rit)) {
 	return enif_make_badarg(env);
     }
     it = (leveldb::Iterator*) rit->object;
 
     /*get key resource*/
     if (!enif_inspect_binary(env, argv[1], &binkey)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "key"));
+	return enif_make_tuple2(env, atom_error, enif_make_atom(env, "key"));
     }
 
     leveldb::Slice start((const char*)binkey.data, (size_t) binkey.size);
@@ -949,14 +959,14 @@ static ERL_NIF_TERM seek_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 	memcpy(binvalue.data, it->value().data(), it->value().size());
 	value_term = enif_make_binary(env, &binvalue);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_tuple2(env, key_term, value_term));
+	return enif_make_tuple2(env, atom_ok, enif_make_tuple2(env, key_term, value_term));
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "invalid"));
+    return enif_make_tuple2(env, atom_error, enif_make_atom(env, "invalid"));
 }
 
-static ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator *it;
     /* Declare key and value erlang resources */
     ErlNifBinary binkey;
@@ -965,7 +975,7 @@ static ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     ERL_NIF_TERM value_term;
 
     /*get it_ptr resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &rit)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], iteratorResource, (void **) &rit)) {
 	return enif_make_badarg(env);
     }
     it = (leveldb::Iterator*) rit->object;
@@ -981,15 +991,15 @@ static ERL_NIF_TERM next_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 	memcpy(binvalue.data, it->value().data(), it->value().size());
 	value_term = enif_make_binary(env, &binvalue);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_tuple2(env, key_term, value_term));
+	return enif_make_tuple2(env, atom_ok, enif_make_tuple2(env, key_term, value_term));
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "invalid"));
+    return enif_make_tuple2(env, atom_error, enif_make_atom(env, "invalid"));
 }
 
 
-static ERL_NIF_TERM prev_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-    my_resource *rit;
+ERL_NIF_TERM prev_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    object_resource *rit;
     leveldb::Iterator *it;
     /*Declare key and value erlang resources*/
     ErlNifBinary binkey;
@@ -998,7 +1008,7 @@ static ERL_NIF_TERM prev_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     ERL_NIF_TERM value_term;
 
     /*get resource*/
-    if (argc != 1 || !enif_get_resource(env, argv[0], myIteratorResource, (void **) &rit)) {
+    if (argc != 1 || !enif_get_resource(env, argv[0], iteratorResource, (void **) &rit)) {
 	return enif_make_badarg(env);
     }
     it = (leveldb::Iterator*) rit->object;
@@ -1015,13 +1025,13 @@ static ERL_NIF_TERM prev_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 	memcpy(binvalue.data, it->value().data(), it->value().size());
 	value_term = enif_make_binary(env, &binvalue);
 
-	return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_tuple2(env, key_term, value_term));
+	return enif_make_tuple2(env, atom_ok, enif_make_tuple2(env, key_term, value_term));
     }
 
-    return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "invalid"));
+    return enif_make_tuple2(env, atom_error, enif_make_atom(env, "invalid"));
 }
 
-static ErlNifFunc nif_funcs[] = {
+ErlNifFunc nif_funcs[] = {
     {"open_db", 2, open_db_nif},
     {"close_db", 1, close_db_nif},
     {"get", 3, get_nif},
@@ -1052,5 +1062,6 @@ static ErlNifFunc nif_funcs[] = {
     {"resource_test", 0, resource_test_nif}
 
 };
+} /* anonymouse namespace ends */
 
 ERL_NIF_INIT(leveldb, nif_funcs, load, reload, upgrade, NULL)
