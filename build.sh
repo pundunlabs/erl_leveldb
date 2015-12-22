@@ -6,7 +6,7 @@ LEVELDB_TAG=v1.18
 if [ ! -d ${leveldb_dir} ]; then
   	# Control will enter here if leveldb doesn't exist.
   	#git clone https://github.com/google/leveldb.git
-	(cd deps && git clone http://skelter/gits/leveldb.git &&
+	(cd deps && git clone https://github.com/pundunlabs/leveldb.git &&
      cd leveldb && git checkout $LEVELDB_TAG)
 fi
 
