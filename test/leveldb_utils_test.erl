@@ -18,9 +18,11 @@
 
 -define(DEFAULT_LENGTH, 10000).
 -define(DEFAULT_START, 1000000).
+-define(DESCENDING, 0).
+-define(ASCENDING, 1).
 
 %%--------------------------------------------------------------------
-%% @doc Time compare leveldb_utils:merge_sorted_kvls/1 with lists:keymerge/3.
+%% @doc Time compare leveldb_utils:merge_sorted_kvls/2 with lists:keymerge/3.
 %% @end
 %%--------------------------------------------------------------------
 -spec time_compare(KVLs :: [kvl()]) -> {T1 :: integer(), T2 :: integer()}.
@@ -30,7 +32,7 @@ time_compare(KVLs) ->
     {T1, T2}.
 
 %%--------------------------------------------------------------------
-%% @doc Time compare leveldb_utils:merge_sorted_kvls/1 with lists:keymerge/3
+%% @doc Time compare leveldb_utils:merge_sorted_kvls/2 with lists:keymerge/3
 %% N times and return shortest times.
 %% @end
 %%--------------------------------------------------------------------
@@ -77,7 +79,7 @@ merge_sorted_nl(N, L) ->
 -spec merge_sorted_kvls(KVLs :: [kvl()]) ->
     {ok, kvl()} | {error, Reason :: any()}.
 merge_sorted_kvls(KVLs) ->
-    leveldb_utils:merge_sorted_kvls(KVLs).
+    leveldb_utils:merge_sorted_kvls(?DESCENDING, KVLs).
 
 %%--------------------------------------------------------------------
 %% @doc Get Mod number of sorted key/value lists in squence Stop to Start

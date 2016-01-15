@@ -26,7 +26,7 @@ static int upgrade(ErlNifEnv* env, void** priv_data,  void** old_priv_data, ERL_
 
 static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     /*kvls: the pointer to list of key/value lists passed from erlang*/
-    ERL_NIF_TERM kvls = argv[0];
+    ERL_NIF_TERM kvls = argv[1];
     /*kvl: the resulting erlang nif term*/
     ERL_NIF_TERM kvl;
     unsigned int kvls_len, len;
@@ -36,10 +36,16 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     ErlNifBinary keybin, valuebin;
     int total_kvps = 0;
 
-    bool ascending = true;
+    int dir;
+    /*get direction integer*/
+    if (argc !=2 || !enif_get_int(env, argv[0], &dir)) {
+	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "direction"));
+    }
+
+    bool descending = (dir == 0);
 
     /*get list of lists*/
-    if (argc != 1 || !enif_get_list_length(env, kvls, &kvls_len)) {
+    if (!enif_get_list_length(env, kvls, &kvls_len)) {
         return enif_make_badarg(env);
     }
 
@@ -85,7 +91,7 @@ static ERL_NIF_TERM merge_sorted_kvls_nif(ErlNifEnv* env, int argc, const ERL_NI
     }
    
     /*Make the vector containing first element of each list a heap*/
-    KeyValuePair comp(ascending);
+    KeyValuePair comp(descending);
     make_heap (maxheap.begin(), maxheap.end(), comp);
     
     /*Declare a vector that keeps Erlang NIF Term representations*/
@@ -140,7 +146,7 @@ static ERL_NIF_TERM sort_kvl_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
     /*get direction integer*/
     if (argc !=2 || !enif_get_int(env, argv[0], &dir)) {
-	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "limit"));
+	return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_atom(env, "direction"));
     }
 
     if (!enif_get_list_length(env, kvl, &kvl_len)) {
@@ -197,7 +203,7 @@ static ERL_NIF_TERM sort_kvl_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"merge_sorted_kvls", 1, merge_sorted_kvls_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"merge_sorted_kvls", 2, merge_sorted_kvls_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"sort_kvl", 2, sort_kvl_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
