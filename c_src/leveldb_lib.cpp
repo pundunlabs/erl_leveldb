@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-using namespace std;
 using namespace leveldb;
 
 namespace {
@@ -21,6 +20,34 @@ namespace {
       }
       return -1;
   }
+}
+
+void delete_db(db_obj_resource* rdb){
+    leveldb::DB *db;
+    db = (leveldb::DB*) rdb->object;
+    rdb->mtx->lock();
+    delete rdb->link_set;
+    delete db;
+    rdb->allocated = 0;
+    rdb->mtx->unlock();
+}
+
+void delete_rit(it_obj_resource* rit){
+    db_obj_resource *rdb;
+    unordered_set<void*> *set;
+
+    rdb = (db_obj_resource*) rit->linked_obj;
+    set = rdb->link_set;
+    rdb->mtx->lock();
+    set->erase(rit);
+    rdb->mtx->unlock();
+
+    leveldb::Iterator *it;
+    it = (leveldb::Iterator*) rit->object;
+    rit->mtx->lock();
+    delete it;
+    rit->allocated = 0;
+    rit->mtx->unlock();
 }
 
 int init_options(ErlNifEnv* env, const ERL_NIF_TERM* options_array, leveldb::Options **_options) {
@@ -150,10 +177,6 @@ leveldb::DB* open_db(leveldb::Options* options, char* path, leveldb::Status* sta
     //cout << "Status: " << status->ToString() << "\n" << endl;
     //assert(status.ok());
     return db;
-}
-
-void close_db(leveldb::DB* db){
-    delete db;
 }
 
 extern ERL_NIF_TERM make_status_tuple(ErlNifEnv* env, leveldb::Status status){
