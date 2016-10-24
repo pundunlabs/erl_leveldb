@@ -1,12 +1,12 @@
 #!/bin/sh
-mkdir -p deps
-leveldb_dir=deps/leveldb
+mkdir -p _build
+leveldb_dir=_build/leveldb
 LEVELDB_TAG=v1.18
 
 if [ ! -d ${leveldb_dir} ]; then
   	# Control will enter here if leveldb doesn't exist.
   	#git clone https://github.com/google/leveldb.git
-	(cd deps && git clone https://github.com/pundunlabs/leveldb.git &&
+	(cd _build && git clone https://github.com/pundunlabs/leveldb.git &&
      cd leveldb && git checkout $LEVELDB_TAG)
 fi
 
