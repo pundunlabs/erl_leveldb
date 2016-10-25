@@ -1,21 +1,19 @@
 #!/bin/sh
-mkdir -p _build
-leveldb_dir=_build/leveldb
+LEVELDB_DIR=c_src/leveldb
 LEVELDB_TAG=v1.18
 
-if [ ! -d ${leveldb_dir} ]; then
+if [ ! -d ${LEVELDB_DIR} ]; then
   	# Control will enter here if leveldb doesn't exist.
   	#git clone https://github.com/google/leveldb.git
-	(cd _build && git clone https://github.com/pundunlabs/leveldb.git &&
-     cd leveldb && git checkout $LEVELDB_TAG)
+	(cd c_src && git clone https://github.com/pundunlabs/leveldb.git && cd leveldb && git checkout $LEVELDB_TAG)
 fi
 
-if [ -f "${leveldb_dir}/libleveldb.a" ]
+if [ -f "${LEVELDB_DIR}/libleveldb.a" ]
 then
 	echo "libleveldb.a found."
 else
 	echo "libleveldb.a not found."
 	export INSTALL_PATH="."
-	(cd ${leveldb_dir} && make)
+	(cd ${LEVELDB_DIR} && make)
 fi
 

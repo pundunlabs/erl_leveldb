@@ -2,9 +2,9 @@
 
 OS=`uname -s`
 if [ "$OS" == "Darwin" ] ; then
-  export DYLD_LIBRARY_PATH=$(pwd)/deps/leveldb
+  export DYLD_LIBRARY_PATH=c_src/leveldb
 else
-  export LD_LIBRARY_PATH=$(pwd)/deps/leveldb
+  export LD_LIBRARY_PATH=c_src/leveldb
 fi
 $*
 
