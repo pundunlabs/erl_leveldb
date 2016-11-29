@@ -195,6 +195,5 @@ extern ERL_NIF_TERM make_status_tuple(ErlNifEnv* env, leveldb::Status status){
     }
     const char* stString = status.ToString().c_str();
     return enif_make_tuple2(env, enif_make_atom(env, "error"),
-			    enif_make_tuple2(env, enif_make_atom(env, type),
-					     enif_make_string(env, stString, ERL_NIF_LATIN1)));
+			    enif_make_atom(env, type));
 }
